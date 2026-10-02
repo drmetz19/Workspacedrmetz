@@ -4,10 +4,11 @@ import { getCommandCenter, type ActivityItem, type DocLite } from '@/server/serv
 import { driveHealth } from '@/server/services/sources'
 import { Flash } from '@/components/Flash'
 import { Icon } from '@/components/Icon'
-import { LevelBadge } from '@/components/Badges'
+import { LevelBadge, daysUntil } from '@/components/Badges'
 import { ACTION_LABEL } from '@/lib/history-labels'
 import { fmtDate, fmtDateTime } from '@/lib/labels'
 import { initials } from '@/lib/initials'
+import { toneForDivision } from '@/lib/division-colors'
 
 function greeting() {
   const h = Number(new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Jakarta' }))
@@ -223,6 +224,57 @@ export default async function CommandCenterPage({ searchParams }: { searchParams
           </ul>
         </div>
       )}
+
+      <div className="section-title">
+        <div>
+          <h2>Notulensi Rapat &amp; Tindak Lanjut</h2>
+          <p>{c.meetingStats.activeActionItems} tindak lanjut aktif · kepatuhan {c.meetingStats.complianceRate}% · {c.meetingStats.minutesThisMonth} notulensi bulan ini.</p>
+        </div>
+        <Link className="btn-link" href="/meetings">Buka semua notulensi <Icon name="chevron_right" size={16} /></Link>
+      </div>
+      <div className="grid grid-2">
+        <div className="card">
+          <div className="card-head"><h2>Rapat Terbaru</h2><Icon name="event_note" /></div>
+          {c.recentMeetings.length === 0 ? <div className="empty">Belum ada notulensi rapat.</div> : (
+            <ul className="list">
+              {c.recentMeetings.map((m) => (
+                <li key={m.minutesId}>
+                  <div className="row" style={{ gap: 8 }}>
+                    {m.divisionName && <span className={`tag tag-${toneForDivision(m.divisionName)}`}>{m.divisionName}</span>}
+                    <span className="spacer" />
+                    <span className="small muted">{fmtDate(m.meetingDate)}</span>
+                  </div>
+                  <Link href={`/meetings/${m.minutesId}`}><strong>{m.title}</strong></Link>
+                  <div className="small muted">{m.actionItemCount} tindak lanjut{m.openActionItemCount ? ` · ${m.openActionItemCount} belum selesai` : ''}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="card">
+          <div className="card-head"><h2>{approver ? 'Tindak Lanjut Terbuka' : 'Tindak Lanjut Saya'}</h2><Icon name="checklist" /></div>
+          {c.openActionItems.length === 0 ? <div className="empty">Tidak ada tindak lanjut terbuka. 👍</div> : (
+            <ul className="list">
+              {c.openActionItems.map((a) => {
+                const days = daysUntil(a.dueDate)
+                const overdue = days !== null && days < 0
+                return (
+                  <li key={a.actionItemId} className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
+                    <form action={`/api/action-items/${a.actionItemId}/status`} method="post">
+                      <input type="hidden" name="status" value="SELESAI" />
+                      <button type="submit" className="todo-check" title="Tandai selesai"><Icon name="check" size={13} /></button>
+                    </form>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="small" style={{ fontWeight: 600 }}>{a.description}</div>
+                      <div className="small muted">{a.divisionName}{a.picName ? ` · ${a.picName}` : ''}{a.dueDate ? ` · ${overdue ? `Lewat ${-days!} hari` : `Tenggat ${fmtDate(a.dueDate)}`}` : ''}</div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
 
       <form className="ask-bar" method="get" action="/search/ask">
         <span className="ai-mark"><Icon name="psychology" /></span>

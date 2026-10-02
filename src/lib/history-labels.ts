@@ -45,6 +45,10 @@ export const ACTION_LABEL: Record<string, string> = {
   AUDIT_VIEWED: 'Log audit dibuka',
   USERS_LISTED: 'Daftar user dibuka',
   DRIVE_SOURCES_LISTED: 'Daftar sumber Drive dibuka',
+  MEETING_MINUTES_CREATED: 'Notulensi rapat dibuat',
+  MEETING_MINUTES_UPDATED: 'Notulensi rapat diubah',
+  ACTION_ITEM_CREATED: 'Tindak lanjut ditambahkan',
+  ACTION_ITEM_STATUS_CHANGED: 'Status tindak lanjut diubah',
 }
 
 export const FIELD_LABEL: Record<string, string> = {

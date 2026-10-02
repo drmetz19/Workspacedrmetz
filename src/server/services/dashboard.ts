@@ -3,6 +3,7 @@ import type { IdentityContext } from '../context'
 import { visibleDocumentsWhere } from '../permissions/sql'
 import { listMyRequests, listPendingApprovals, type AccessRequestDto } from './access'
 import { todayJakarta } from './search'
+import { getMeetingStats, listActionItems, listMeetings, type ActionItemDto, type MeetingMinutesDto, type MeetingStats } from './meetings'
 
 /** Angka badge di sidebar. */
 export async function shellCounts(ctx: IdentityContext) {
@@ -60,6 +61,9 @@ export interface CommandCenter {
   restrictedActivity: ActivityItem[]
   divisions: DivisionSummary[]
   myRequests: AccessRequestDto[]
+  meetingStats: MeetingStats
+  recentMeetings: MeetingMinutesDto[]
+  openActionItems: ActionItemDto[]
 }
 
 type LiteRow = {
@@ -139,11 +143,14 @@ export async function getCommandCenter(ctx: IdentityContext, opts: { today?: str
     }))
   }
 
-  const [pendingApprovals, myRequests, recentActivity, restrictedActivity] = await Promise.all([
+  const [pendingApprovals, myRequests, recentActivity, restrictedActivity, meetingStats, recentMeetings, openActionItems] = await Promise.all([
     approver ? listPendingApprovals(ctx) : Promise.resolve([]),
     listMyRequests(ctx),
     activity(false),
     activity(true),
+    getMeetingStats(ctx),
+    listMeetings(ctx, { limit: 3 }),
+    listActionItems(ctx, { status: 'OPEN', scope: approver ? 'all' : 'mine', limit: 6 }),
   ])
   const expiring = data.expiring.map(lite)
   return {
@@ -166,5 +173,8 @@ export async function getCommandCenter(ctx: IdentityContext, opts: { today?: str
       managerName: d.manager_name, expiringCount: d.expiring_count,
     })),
     myRequests: myRequests.filter((r) => r.status === 'PENDING' || r.status === 'APPROVED' || (r.status === 'REJECTED' && r.decidedAt && Date.now() - r.decidedAt.getTime() < 14 * 86_400_000)),
+    meetingStats,
+    recentMeetings,
+    openActionItems,
   }
 }

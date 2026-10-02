@@ -57,6 +57,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
           <span className="nav-label">Menu utama</span>
           <NavLink href="/" exact icon="dashboard">Beranda / Overview</NavLink>
           <NavLink href="/documents" icon="folder">Direktori Dokumen</NavLink>
+          <NavLink href="/meetings" icon="forum">Notulensi & Tindak Lanjut</NavLink>
           <NavLink href="/search" icon="manage_search">Pencarian</NavLink>
           <NavLink href="/access" icon="verified_user" count={counts.pendingApprovals}>Persetujuan</NavLink>
           <NavLink href="/search/ask" icon="psychology">Tanya AI CSSE</NavLink>
