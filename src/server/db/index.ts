@@ -10,8 +10,11 @@ const globalForDb = globalThis as unknown as { __csseSql?: Sql; __csseSqlUrl?: s
 export function db(): Sql {
   const url = config.databaseUrl
   if (!globalForDb.__csseSql || globalForDb.__csseSqlUrl !== url) {
+    // Supabase pooler mode "transaction" (port 6543) tidak mendukung prepared statements.
+    const pooled = /:6543\//.test(url) || process.env.DATABASE_POOLER === '1'
     globalForDb.__csseSql = postgres(url, {
       max: 10,
+      prepare: !pooled,
       onnotice: () => {},
       types: {
         bigint: postgres.BigInt,
