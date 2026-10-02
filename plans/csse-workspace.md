@@ -19,6 +19,7 @@
 - **Schema (tabel inti)**: `users` (user_id, drmetz_identity_id nullable, email, name, role_id, division_id, status INVITED/ACTIVE/DEACTIVATED — undangan = baris user INVITED), `sessions`, `auth_tokens` (undangan & reset), `email_outbox`, `roles`, `divisions`, `categories`, `documents` (document_id, external_provider, external_resource_id unik, external_url, name, category_id, division_id, security_level 1–5, owner_user_id, pic_user_id, status, version, supersedes_document_id, effective_date, expiry_date, document_number, confirmed_summary, owner_approval_required, source_id, flags), `document_suggestions` (saran AI terpisah dari field final), `permissions` (resource, principal_type USER/ROLE/DIVISION, principal_id, permission_type, granted_by, expires_at), `access_requests` (requester, document, reason, approver_rule, status, duration, decided_by, reject_reason, expires_at), `drive_sources` (drive id/folder id, type STANDARD/RESTRICTED, last_scan_at, status), `audit_events` (append-only).
 - **Status dokumen**: DRAFT → ACTIVE → SUPERSEDED / ARCHIVED; flag SOURCE_MISSING, CONTENT_UNREADABLE.
 - **Kebijakan level**: tabel di PRD (Implementation Decisions → Kebijakan level keamanan) adalah satu-satunya sumber aturan; diimplementasikan deterministik di permission engine, dicerminkan RLS.
+- **UI design system**: Stitch "Clinical Governance Workspace" (navy #0B192C, cyan #00ADB5, Inter, radius 4px, badge level L1–L5 berwarna, topbar + sidebar 240px). Font self-hosted (Inter, Material Symbols).
 - **Third-party boundaries**: Google Drive via akun service / domain-wide delegation (butuh D2); AI via satu adapter, satu provider (butuh D1).
 
 ---
@@ -92,10 +93,10 @@ Permission engine deterministik yang menerapkan tabel kebijakan level L1–5 (si
 Halaman pencarian dengan keyword + filter gabungan (kategori, divisi, level, PIC, status, rentang tanggal, kedaluwarsa) melalui `search_documents`. Hasil selalu dibatasi permission scope user. Versi aktif diprioritaskan; versi lama diberi label.
 
 ### Acceptance criteria
-- [ ] Kombinasi beberapa filter mengembalikan hasil yang benar
-- [ ] Hasil tidak pernah memuat dokumen di luar permission scope (diuji dengan dua user berbeda, query sama)
-- [ ] Bila ada beberapa versi, versi ACTIVE di urutan teratas; SUPERSEDED berlabel "tidak berlaku"
-- [ ] Response API menyertakan `permission_scope_applied: true`
+- [x] Kombinasi beberapa filter mengembalikan hasil yang benar
+- [x] Hasil tidak pernah memuat dokumen di luar permission scope (diuji dengan dua user berbeda, query sama)
+- [x] Bila ada beberapa versi, versi ACTIVE di urutan teratas; SUPERSEDED berlabel "tidak berlaku"
+- [x] Response API menyertakan `permission_scope_applied: true`
 
 ---
 

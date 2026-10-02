@@ -164,6 +164,10 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Ask AI: alur **intent → identity → permission scope → query registry (metadata + ringkasan terkonfirmasi) → model menyusun jawaban + sitasi record**. Tanpa embedding, tanpa vector DB, tanpa membaca isi file saat query.
 - Semua query AI dicatat di audit.
 
+### Desain UI
+- Mengikuti mockup Stitch "Application Mockup Generator" (Clinical Governance Workspace): Command Center berisi kartu ringkasan, grid divisi + PIC, tabel "Perlu Perhatian Segera", bar Tanya AI; layar Persetujuan dengan tab + panel ringkasan.
+- Elemen mockup di luar scope MVP tidak dibuat tiruan: tanda tangan elektronik, "audit log kripto / SHA-256", approval kontrak/surat (hanya permintaan akses L3–5), angka dummy.
+
 ### Command Center & navigasi MVP
 - Command Center (dashboard per peran), Dokumen (Semua, Milik Saya, Divisi, Draft Review, Terbatas), Pencarian (Filter, Ask AI), Akses (Permintaan Saya, Menunggu Saya), Aktivitas/Audit (Owner), Administrasi (User & undangan, Divisi, Kategori, Sumber Drive).
 
@@ -226,6 +230,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 5 · Kata kunci dicocokkan pada data yang sudah diamankan izin (nomor & ringkasan dokumen yang belum boleh dibuka tidak ikut dicari); pencarian juga mencocokkan nama PIC/kategori/divisi; sidebar per divisi → pencarian per divisi. UI di-restyle mengikuti design system Stitch dari Owner — alasan: mencegah kebocoran isi lewat kata kunci; permintaan desain Owner.
 - 2026-10-02 · Phase 4 · Engine izin dilengkapi aturan yang tidak tertulis di tabel level: GM kehilangan hak default pada dokumen OWNER_APPROVAL_REQUIRED, metadata sensitif disembunyikan bagi yang hanya 'boleh tahu', batas level saat pendaftaran per role, auto-PIC untuk Division User, cabut hak REST Supabase — alasan: menutup celah kebocoran & mencegah pembuat dokumen terkunci dari dokumennya sendiri. Perlu konfirmasi Owner (lihat A9).
 - 2026-10-02 · Phase 3 · Riwayat dokumen diambil dari audit event (bukan tabel riwayat terpisah); tautan Drive apa pun bentuknya (file/Docs/Sheets/open?id=) dinormalisasi ke file ID untuk deteksi duplikat; satu dokumen hanya bisa digantikan satu versi (rantai linear) — alasan: audit sudah menjadi sumber kebenaran, dan duplikat link berbeda-bentuk harus tertangkap.
 - 2026-10-02 · Phase 2 · Ditambah: aktifkan kembali user nonaktif, Owner tidak bisa menurunkan role sendiri, divisi/kategori bisa dinonaktifkan (tidak dihapus) — alasan: edge case administrasi yang muncul saat implementasi; menjaga riwayat dan mencegah Owner terkunci dari admin.

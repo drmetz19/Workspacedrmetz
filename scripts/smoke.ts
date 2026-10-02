@@ -10,6 +10,7 @@ const PHASES: Record<number, string> = {
   2: 'Admin organisasi',
   3: 'Registry manual + versi',
   4: 'Permission engine',
+  5: 'Pencarian filter',
 }
 
 async function main() {
