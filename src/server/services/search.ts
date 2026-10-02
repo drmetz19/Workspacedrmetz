@@ -38,7 +38,10 @@ const SearchInput = z.object({
   expiryTo: optionalDate,
   /** Untuk test / zona waktu: tanggal "hari ini" (YYYY-MM-DD). Default: hari ini Asia/Jakarta. */
   today: optionalDate,
+  /** Tahun berlaku/berakhir (mis. 2026): dokumen yang tanggal berlaku atau berakhirnya jatuh di tahun itu. */
+  year: z.coerce.number().int().min(1990).max(2100).nullish().transform((v) => v ?? null),
   limit: z.coerce.number().int().min(1).max(200).nullish().transform((v) => v ?? 100),
+  offset: z.coerce.number().int().min(0).nullish().transform((v) => v ?? 0),
 })
 
 export type SearchFilters = z.input<typeof SearchInput>
@@ -104,6 +107,7 @@ export async function searchDocuments(ctx: IdentityContext, input: unknown): Pro
           and ${f.effectiveTo ? q`d.effective_date <= ${f.effectiveTo}` : q`true`}
           and ${f.expiryFrom ? q`d.expiry_date >= ${f.expiryFrom}` : q`true`}
           and ${f.expiryTo ? q`d.expiry_date <= ${f.expiryTo}` : q`true`}
+          and ${f.year ? q`(extract(year from d.effective_date) = ${f.year} or extract(year from d.expiry_date) = ${f.year})` : q`true`}
           and ${
             f.expiry === 'expired' ? q`d.expiry_date < ${today}`
             : f.expiry === 'within30' ? q`d.expiry_date >= ${today} and d.expiry_date <= ${addDays(today, 30)}`
@@ -125,5 +129,5 @@ export async function searchDocuments(ctx: IdentityContext, input: unknown): Pro
   }
   const statusRank = (s: string) => (s === 'ACTIVE' ? 0 : s === 'SUPERSEDED' ? 1 : 2)
   scored.sort((a, b) => statusRank(a.status) - statusRank(b.status) || b.score - a.score || b.version - a.version || +b.updatedAt - +a.updatedAt)
-  return { results: scored.slice(0, f.limit), total: scored.length, permissionScopeApplied: true, filters: f }
+  return { results: scored.slice(f.offset, f.offset + f.limit), total: scored.length, permissionScopeApplied: true, filters: f }
 }

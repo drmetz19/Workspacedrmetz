@@ -242,3 +242,36 @@ dl.meta dd { margin: 0; }
 .footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--ink-3); }
 @media (max-width: 900px) { .access-grid { grid-template-columns: 1fr !important; } }
 .grid > .card, .stack > .card { margin-top: 0; }
+
+/* ── Direktori Dokumen Divisi (Phase 15) ───────────────────────────── */
+.seg { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.seg-item { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.seg-item:hover { text-decoration: none; border-color: var(--line-strong); color: var(--ink); }
+.seg-item .count { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-3); }
+.seg-item.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.seg-item.active .count { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.dir-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.dir-filter { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); }
+.dir-filter select { min-width: 170px; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.dir-search { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: var(--radius); padding: 0 10px; background: var(--surface); color: var(--ink-3); min-width: 240px; }
+.dir-search input { border: 0; outline: 0; padding: 7px 0; background: transparent; width: 100%; font: inherit; color: var(--ink); }
+.dir-table td { vertical-align: middle; }
+.doc-cell { display: flex; gap: 10px; align-items: flex-start; }
+.doc-icon { width: 32px; height: 32px; border-radius: var(--radius); background: var(--surface-3); color: var(--navy-2); display: grid; place-items: center; flex-shrink: 0; }
+.drive-state { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.drive-state.ok { color: var(--ok-ink); }
+.drive-state.warn { color: var(--warn-ink); }
+.dir-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.pager { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.pager [aria-disabled='true'] { opacity: 0.45; pointer-events: none; }
+.drive-card { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
+.drive-card-icon { width: 42px; height: 42px; border-radius: var(--radius-lg); background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex-shrink: 0; }
+.btn-warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-ink); }
+.btn-warn:hover { background: #fef3c7; }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+@media (max-width: 720px) {
+  .dir-search { min-width: 0; flex: 1 1 100%; }
+  .dir-filter select { min-width: 0; }
+}
+.drive-card > div { flex: 1 1 320px; min-width: 0; }
+.doc-cell .lvl { font-size: 9.5px; }

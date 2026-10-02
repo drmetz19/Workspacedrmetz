@@ -12,9 +12,11 @@ interface Props {
   canSetLevel?: boolean
   submitLabel: string
   defaultDivisionId?: string | null
+  /** Pra-pilih dokumen yang digantikan (tombol "Perpanjang" di direktori). */
+  defaultSupersedesId?: string | null
 }
 
-export function DocumentForm({ action, doc, categories, divisions, users, replaceable, canSetLevel = true, submitLabel, defaultDivisionId }: Props) {
+export function DocumentForm({ action, doc, categories, divisions, users, replaceable, canSetLevel = true, submitLabel, defaultDivisionId, defaultSupersedesId }: Props) {
   return (
     <form action={action} method="post" className="card">
       <div className="field">
@@ -77,7 +79,7 @@ export function DocumentForm({ action, doc, categories, divisions, users, replac
       {replaceable && replaceable.length > 0 && (
         <div className="field">
           <label htmlFor="supersedesDocumentId">Menggantikan dokumen (opsional)</label>
-          <select id="supersedesDocumentId" name="supersedesDocumentId" defaultValue="">
+          <select id="supersedesDocumentId" name="supersedesDocumentId" defaultValue={defaultSupersedesId ?? ''}>
             <option value="">— Bukan versi baru —</option>
             {replaceable.map((d) => <option key={d.documentId} value={d.documentId}>{d.documentName} (v{d.version})</option>)}
           </select>

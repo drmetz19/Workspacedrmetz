@@ -13,14 +13,17 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
     listUserOptions(user),
     listDocuments(user, { status: 'ACTIVE' }),
   ])
+  const renewOf = active.find((d) => d.documentId === get('supersedes')) ?? null
   const allowedDivisions = user.roleId === 'DIVISION_USER' ? divisions.filter((d) => d.divisionId === user.divisionId) : divisions
   return (
     <>
       <Flash err={get('err')} />
       <div className="page-head">
         <div>
-          <h1>Daftarkan dokumen</h1>
-          <p>Catat dokumen yang sudah ada di Google Drive ke registry CSSE.</p>
+          <h1>{renewOf ? 'Perpanjang / versi baru' : 'Daftarkan dokumen'}</h1>
+          <p>{renewOf
+            ? `Daftarkan versi baru untuk "${renewOf.documentName}" (v${renewOf.version}). Versi lama otomatis ditandai tidak berlaku.`
+            : 'Catat dokumen yang sudah ada di Google Drive ke registry CSSE.'}</p>
         </div>
       </div>
       <DocumentForm
@@ -30,7 +33,8 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
         users={users}
         replaceable={active}
         submitLabel="Simpan dokumen"
-        defaultDivisionId={user.divisionId}
+        defaultDivisionId={renewOf?.divisionId ?? user.divisionId}
+        defaultSupersedesId={renewOf?.documentId ?? null}
       />
     </>
   )

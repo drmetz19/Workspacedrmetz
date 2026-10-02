@@ -20,6 +20,7 @@ const PHASES: Record<number, string> = {
   12: 'Audit + error state',
   13: 'Drive mode tautan',
   14: 'Email Gmail SMTP',
+  15: 'Direktori Dokumen Divisi',
 }
 
 async function main() {

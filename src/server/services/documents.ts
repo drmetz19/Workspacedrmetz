@@ -71,6 +71,11 @@ export interface DocumentDto {
   ownerApprovalRequired: boolean
   sourceId: string | null
   flags: { sourceMissing: boolean; contentUnreadable: boolean }
+  /** Ada tautan/berkas Drive (tanpa membocorkan tautannya). */
+  hasFile: boolean
+  /** User ini boleh membuka berkas (dihitung engine). */
+  canOpen: boolean
+  openMode: 'DRIVE' | 'CSSE'
   createdAt: Date
   updatedAt: Date
 }
@@ -118,6 +123,7 @@ export function secureDocumentDto(ctx: IdentityContext, r: DocumentRow, grants: 
   const f = facts(r)
   const open = decide(ctx, f, 'OPEN', grants).allowed
   const dto = toDocumentDto(r, { exposeUrl: open && openMode(f) === 'DRIVE' })
+  dto.canOpen = open
   if (!open) {
     dto.confirmedSummary = null
     dto.documentNumber = null
@@ -152,6 +158,9 @@ export function toDocumentDto(r: DocumentRow, opts: { exposeUrl?: boolean } = {}
     ownerApprovalRequired: r.owner_approval_required,
     sourceId: r.source_id,
     flags: { sourceMissing: r.flag_source_missing, contentUnreadable: r.flag_content_unreadable },
+    hasFile: !!(r.external_resource_id || r.external_url),
+    canOpen: false,
+    openMode: openMode(facts(r)),
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }
@@ -448,4 +457,25 @@ export async function listUserOptions(_ctx: IdentityContext) {
   return db()<{ user_id: string; name: string; email: string; division_name: string | null }[]>`
     select u.user_id, u.name, u.email, d.division_name from users u left join divisions d on d.division_id = u.division_id
     where u.status <> 'DEACTIVATED' order by u.name`
+}
+
+// ── Direktori: jumlah dokumen aktif per divisi (dalam scope izin) ─────
+export interface DirectoryCounts {
+  total: number
+  byDivision: { divisionId: string | null; divisionName: string; count: number }[]
+}
+
+export async function directoryCounts(ctx: IdentityContext): Promise<DirectoryCounts> {
+  return withUserScope(ctx.userId, async (q) => {
+    const rows = await q<{ division_id: string | null; division_name: string | null; n: number }[]>`
+      select d.division_id, v.division_name, count(*)::int as n
+      from documents d left join divisions v on v.division_id = d.division_id
+      where ${visibleDocumentsWhere(q, ctx)} and d.status = 'ACTIVE'
+      group by d.division_id, v.division_name
+      order by v.division_name nulls last`
+    return {
+      total: rows.reduce((a, r) => a + r.n, 0),
+      byDivision: rows.map((r) => ({ divisionId: r.division_id, divisionName: r.division_name ?? 'Tanpa divisi', count: r.n })),
+    }
+  })
 }
