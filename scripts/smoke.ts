@@ -18,12 +18,14 @@ const PHASES: Record<number, string> = {
   10: 'Ask AI',
   11: 'Command Center',
   12: 'Audit + error state',
+  13: 'Drive mode tautan',
+  14: 'Email Gmail SMTP',
 }
 
 async function main() {
   const arg = process.argv[2]
   const phases = arg ? arg.split(',').map(Number) : Object.keys(PHASES).map(Number)
-  const server = await startServer()
+  let server = await startServer()
   const results: { phase: number; title: string; passed: boolean; checks: number; failed: number }[] = []
   try {
     for (const n of phases) {
@@ -31,15 +33,26 @@ async function main() {
       await resetSmokeDb()
       const t = new Smoke(String(n))
       const mod = await import(`./smoke/phase${n}.ts`)
+      // Fase dengan konfigurasi khusus (mis. DRIVE_PROVIDER=link) → server dijalankan ulang dengan env-nya.
+      const custom = mod.serverEnv as Record<string, string> | undefined
+      if (custom) {
+        await stopServer(server)
+        server = await startServer(custom)
+      }
       try {
         await mod.default(t)
       } catch (e) {
         t.check('Skenario selesai tanpa exception', false, String((e as Error).stack ?? e))
+      } finally {
+        if (custom) {
+          await stopServer(server)
+          server = await startServer()
+        }
       }
       results.push({ phase: n, title: PHASES[n], passed: t.passed, checks: t.checks.length, failed: t.checks.filter((c) => !c.ok).length })
     }
   } finally {
-    stopServer(server)
+    await stopServer(server)
     await sql().end({ timeout: 2 })
   }
   console.log('\nRingkasan smoke test')

@@ -4,6 +4,7 @@ import { auditAs, recordAudit } from '../audit'
 import { ServiceError } from '../errors'
 import type { IdentityContext } from '../context'
 import { requireOwner } from '../guards'
+import { config } from '../config'
 import { optionalUuid, parseInput, requireUuid } from '../validation'
 import {
   driveAdapter,
@@ -77,6 +78,7 @@ const SourceInput = z.object({
 
 export async function createDriveSource(ctx: IdentityContext, input: unknown): Promise<DriveSourceDto> {
   await requireOwner(ctx, 'DRIVE_SOURCE_CONNECTED', 'DRIVE_SOURCE')
+  assertNotLinkMode()
   const data = parseInput(SourceInput, input)
   const externalId = parseDriveContainerId(data.folder)
   if (!externalId) throw new ServiceError('VALIDATION', 'folder: bukan tautan/ID folder Google Drive yang dikenali')
@@ -131,12 +133,22 @@ export async function setDriveSourceStatus(ctx: IdentityContext, sourceId: unkno
 }
 
 /** Status koneksi Drive untuk topbar & dashboard. */
+const LINK_MODE_MSG = 'Mode tautan Drive aktif: dokumen cukup didaftarkan dengan tautan Google Drive-nya (izin file diatur dari setelan berbagi Drive). Scan folder tidak dipakai.'
+
+function assertNotLinkMode() {
+  if (config.driveMode === 'link') throw new ServiceError('VALIDATION', LINK_MODE_MSG)
+}
+
 export async function driveHealth() {
+  if (config.driveMode === 'link') {
+    return { mode: 'link' as const, configured: true, sources: 0, connected: true, authErrors: [] as { name: string; error: string | null }[] }
+  }
   const rows = await db()<{ status: string; auth_status: string; last_scan_status: string | null; name: string; last_scan_error: string | null }[]>`
     select status, auth_status, last_scan_status, name, last_scan_error from drive_sources where status = 'ACTIVE'`
   const configured = driveAdapter().isConfigured()
   const errors = rows.filter((r) => r.auth_status === 'ERROR')
   return {
+    mode: config.driveMode,
     configured,
     sources: rows.length,
     connected: configured && rows.length > 0 && errors.length === 0,
@@ -153,6 +165,7 @@ function audit(actor: Actor, e: Parameters<typeof recordAudit>[0]) {
 
 export async function scanSource(actor: Actor, sourceId: unknown): Promise<ScanStats> {
   if (actor) await requireOwnerOrGm(actor, 'DRIVE_SCAN_COMPLETED')
+  assertNotLinkMode()
   const id = requireUuid(sourceId, 'Sumber')
   const [src] = await db()<SourceRow[]>`select * from drive_sources where source_id = ${id}`
   if (!src) throw new ServiceError('NOT_FOUND', 'Sumber tidak ditemukan.')
@@ -239,6 +252,7 @@ async function createDraftFromFile(actor: Actor, src: SourceRow, file: DriveFile
 
 /** Dipanggil cron harian. */
 export async function scanAllSources() {
+  if (config.driveMode === 'link') return []
   const sources = await db()<{ source_id: string; name: string }[]>`select source_id, name from drive_sources where status = 'ACTIVE' order by created_at`
   const results: { sourceId: string; name: string; ok: boolean; stats?: ScanStats; error?: string }[] = []
   for (const s of sources) {

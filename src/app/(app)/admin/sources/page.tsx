@@ -9,6 +9,24 @@ import { fmtDateTime } from '@/lib/labels'
 export default async function SourcesPage({ searchParams }: { searchParams: SearchParams }) {
   const user = await requireUser()
   const { get } = await sp(searchParams)
+  if (process.env.DRIVE_PROVIDER === 'link') {
+    return (
+      <>
+        <div className="page-head">
+          <div>
+            <div className="crumbs"><Icon name="cloud_sync" size={14} /> Integrasi</div>
+            <h1>Google Drive — mode tautan</h1>
+            <p>Dokumen cukup didaftarkan dengan tautan Google Drive-nya. Tidak ada scan folder dan tidak perlu akun service.</p>
+          </div>
+        </div>
+        <div className="card stack">
+          <p className="small">1. Di Google Drive, klik <strong>Bagikan</strong> pada file/folder dan atur siapa yang boleh membuka (L3–5: hanya orang yang berwenang).</p>
+          <p className="small">2. Salin tautannya, lalu daftarkan lewat <a href="/documents/new">Tambah dokumen</a>.</p>
+          <p className="small muted">CSSE tetap menyaring siapa yang bisa melihat dokumen di direktori, dan setiap pembukaan dicatat di audit.</p>
+        </div>
+      </>
+    )
+  }
   const [sources, divisions] = await Promise.all([listDriveSources(user), listDivisions(user)])
   const adapter = driveAdapter()
   return (

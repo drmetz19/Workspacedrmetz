@@ -13,7 +13,11 @@ export function OpenPanel({ doc, myRequest }: { doc: DocumentDetail; myRequest?:
       <div className="card row">
         <div>
           <strong>Dokumen Level {doc.securityLevel}</strong>
-          <div className="small muted">Dapat dibuka langsung di Google Drive.</div>
+          <div className="small muted">
+            {doc.securityLevel >= 3
+              ? 'Dokumen terbatas. Dibuka di Google Drive — akses file mengikuti setelan berbagi Drive. Setiap pembukaan dicatat di audit.'
+              : 'Dapat dibuka langsung di Google Drive.'}
+          </div>
         </div>
         <span className="spacer" />
         <a className="btn btn-primary" href={`/api/documents/${doc.documentId}/open-drive`} target="_blank" rel="noreferrer">Buka di Google Drive ↗</a>

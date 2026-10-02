@@ -1,6 +1,7 @@
 import { db } from '../db'
 import { auditAs } from '../audit'
 import { ServiceError } from '../errors'
+import { config } from '../config'
 import type { IdentityContext } from '../context'
 import { decide } from '../permissions/engine'
 import { driveAdapter, DriveAuthError, DriveNotFoundError, DriveUnavailableError } from '../integrations/drive'
@@ -35,6 +36,8 @@ export async function getAuthorizedDocument(ctx: IdentityContext, documentId: un
       requestable: dec.requestable, reason: dec.reason,
     })
   }
+  if (config.driveMode === 'link')
+    throw new ServiceError('VALIDATION', 'Mode tautan Drive aktif: buka dokumen lewat tautan Google Drive-nya.')
   if (!row.external_resource_id) throw new ServiceError('NOT_FOUND', 'Dokumen ini belum memiliki file di Google Drive.')
   let file
   try {
@@ -62,7 +65,8 @@ export async function getAuthorizedDocument(ctx: IdentityContext, documentId: un
 export async function openDriveLink(ctx: IdentityContext, documentId: unknown): Promise<string> {
   const { row, grants } = await loadVisibleDocumentWithGrants(ctx, documentId, 'DOCUMENT_OPENED')
   const dec = decide(ctx, facts(row), 'OPEN', grants)
-  if (!dec.allowed || row.security_level >= 3 || !row.external_url) {
+  const linkMode = config.driveMode === 'link'
+  if (!dec.allowed || (!linkMode && row.security_level >= 3) || !row.external_url) {
     await auditAs(ctx, { action: 'ACCESS_DENIED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'DENIED', metadata: { attempted: 'DOCUMENT_OPENED', via: 'DRIVE_LINK' } })
     throw new ServiceError('ACCESS_DENIED', row.security_level >= 3 ? 'Dokumen terbatas hanya dapat dibuka lewat CSSE.' : 'Akses ditolak.')
   }

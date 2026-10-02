@@ -102,9 +102,12 @@ export default async function CommandCenterPage({ searchParams }: { searchParams
             desc={`Masa berlaku habis dalam ≤ 90 hari${c.totals.expired ? `, ${c.totals.expired} sudah lewat` : ''} (izin, SIP/STR, kontrak, sewa).`}
             link="/search?expiry=within90" linkLabel="Lihat daftar" meta={c.totals.expired ? `${c.totals.expired} kritis` : undefined} />
           <StatCard tone="teal" eyebrow="Google Drive" icon={drive.connected ? 'cloud_done' : 'cloud_off'} value={c.totals.activeDocuments} unit="Dokumen"
-            desc={`Dokumen aktif terdaftar di CSSE; ${c.totals.driveSynced} tersinkron dari folder Drive yang terhubung.`}
-            link={user.roleId === 'OWNER' ? '/admin/sources' : '/documents'} linkLabel={user.roleId === 'OWNER' ? 'Sumber Drive' : 'Direktori'}
-            meta={drive.sources ? (drive.connected ? 'Terhubung' : 'Bermasalah') : 'Belum terhubung'} />
+            desc={drive.mode === 'link'
+              ? 'Dokumen aktif terdaftar di CSSE dengan tautan Google Drive; izin file mengikuti setelan berbagi Drive.'
+              : `Dokumen aktif terdaftar di CSSE; ${c.totals.driveSynced} tersinkron dari folder Drive yang terhubung.`}
+            link={user.roleId === 'OWNER' && drive.mode !== 'link' ? '/admin/sources' : '/documents'}
+            linkLabel={user.roleId === 'OWNER' && drive.mode !== 'link' ? 'Sumber Drive' : 'Direktori'}
+            meta={drive.mode === 'link' ? 'Mode tautan' : drive.sources ? (drive.connected ? 'Terhubung' : 'Bermasalah') : 'Belum terhubung'} />
         </div>
       ) : (
         <div className="grid grid-3">

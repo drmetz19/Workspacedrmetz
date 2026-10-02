@@ -66,9 +66,9 @@ export function DocumentForm({ action, doc, categories, divisions, users, replac
         </div>
       </div>
       <div className="field">
-        <label htmlFor="externalUrl">Tautan / ID file Google Drive</label>
-        <input id="externalUrl" name="externalUrl" defaultValue={doc?.externalUrl ?? ''} placeholder="https://drive.google.com/file/d/…" />
-        <div className="field-hint">CSSE menyimpan ID file sebagai referensi; file tetap berada di Google Drive.</div>
+        <label htmlFor="externalUrl">Tautan Google Drive (file atau folder)</label>
+        <input id="externalUrl" name="externalUrl" defaultValue={doc?.externalUrl ?? ''} placeholder="https://drive.google.com/file/d/… atau …/drive/folders/…" />
+        <div className="field-hint">File tetap berada di Google Drive. Siapa yang bisa membuka file diatur dari tombol &ldquo;Bagikan&rdquo; di Drive — untuk L3–5 bagikan hanya ke orang yang berwenang.</div>
       </div>
       <div className="field">
         <label htmlFor="confirmedSummary">Ringkasan singkat</label>

@@ -15,12 +15,13 @@ export interface ShellDivision {
   divisionName: string
 }
 
-export function AppShell({ user, children, counts = {}, divisions = [], driveConnected = null }: {
+export function AppShell({ user, children, counts = {}, divisions = [], driveConnected = null, driveLinkMode = false }: {
   user: IdentityContext
   children: React.ReactNode
   counts?: ShellCounts
   divisions?: ShellDivision[]
   driveConnected?: boolean | null
+  driveLinkMode?: boolean
 }) {
   const owner = user.roleId === 'OWNER'
   return (
@@ -77,7 +78,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
             <NavLink href="/admin/users" icon="badge">User &amp; Undangan</NavLink>
             <NavLink href="/admin/divisions" icon="account_tree">Divisi</NavLink>
             <NavLink href="/admin/categories" icon="sell">Kategori</NavLink>
-            <NavLink href="/admin/sources" icon="cloud_sync">Sumber Drive</NavLink>
+            {!driveLinkMode && <NavLink href="/admin/sources" icon="cloud_sync">Sumber Drive</NavLink>}
           </nav>
         )}
         </Suspense>

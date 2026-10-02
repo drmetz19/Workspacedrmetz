@@ -74,8 +74,12 @@ export function approverFor(d: DocFacts): Approver {
   return 'GM'
 }
 
-/** Cara membuka: L1–2 langsung di Drive, L3–5 hanya lewat CSSE. */
-export const openMode = (d: DocFacts): 'DRIVE' | 'CSSE' => (d.securityLevel <= 2 ? 'DRIVE' : 'CSSE')
+/**
+ * Cara membuka: L1–2 langsung di Drive, L3–5 hanya lewat CSSE.
+ * Mode tautan (DRIVE_PROVIDER=link): semua level lewat tautan Drive — izin file dijaga setelan berbagi Drive.
+ */
+export const openMode = (d: DocFacts): 'DRIVE' | 'CSSE' =>
+  process.env.DRIVE_PROVIDER === 'link' || d.securityLevel <= 2 ? 'DRIVE' : 'CSSE'
 
 export function canView(ctx: IdentityContext, d: DocFacts, grants: Grant[] = [], now = new Date()): boolean {
   if (isOwner(ctx)) return true

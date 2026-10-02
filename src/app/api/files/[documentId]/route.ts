@@ -10,6 +10,10 @@ function contentDisposition(kind: 'inline' | 'attachment', name: string) {
 /** Proxy file dokumen: GET /api/files/{documentId}[?download=1] */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = await params
+  if (process.env.DRIVE_PROVIDER === 'link') {
+    // Mode tautan: tidak ada proxy — arahkan ke jalur tautan Drive (tetap diperiksa izin + diaudit).
+    return NextResponse.redirect(new URL(`/api/documents/${encodeURIComponent(documentId)}/open-drive`, req.url), 303)
+  }
   try {
     const ctx = await userFromRequest(req)
     const file = await getAuthorizedDocument(ctx, documentId, { download: req.nextUrl.searchParams.get('download') === '1' })

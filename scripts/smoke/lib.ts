@@ -41,6 +41,7 @@ export async function startServer(extraEnv: Record<string, string> = {}): Promis
   const proc = spawn('pnpm', ['exec', 'next', 'start', '-p', String(PORT)], {
     env: { ...process.env, ...smokeEnv, ...extraEnv, NODE_ENV: 'production' },
     stdio: ['ignore', 'pipe', 'pipe'],
+    detached: true, // grup proses sendiri → bisa dimatikan beserta proses next di dalamnya
   })
   let log = ''
   proc.stdout!.on('data', (d) => (log += d))
@@ -56,8 +57,19 @@ export async function startServer(extraEnv: Record<string, string> = {}): Promis
   throw new Error('Server tidak siap:\n' + log)
 }
 
-export function stopServer(proc: ChildProcess) {
-  proc.kill('SIGTERM')
+export function stopServer(proc: ChildProcess): Promise<void> {
+  if (proc.exitCode !== null || proc.signalCode !== null) return Promise.resolve()
+  return new Promise((resolve) => {
+    proc.once('exit', async () => {
+      // tunggu port benar-benar lepas
+      for (let i = 0; i < 40; i++) {
+        try { await fetch(`${BASE}/login`) } catch { return resolve() }
+        await new Promise((r) => setTimeout(r, 250))
+      }
+      resolve()
+    })
+    try { process.kill(-proc.pid!, 'SIGTERM') } catch { proc.kill('SIGTERM') }
+  })
 }
 
 /** Klien HTTP dengan cookie jar, tanpa mengikuti redirect otomatis. */

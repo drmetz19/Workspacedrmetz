@@ -8,6 +8,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser()
   const [divisions, drive, counts] = await Promise.all([listDivisions(user), driveHealth(), shellCounts(user)])
   return (
-    <AppShell user={user} divisions={divisions} counts={counts} driveConnected={drive.sources > 0 ? drive.connected : null}>{children}</AppShell>
+    <AppShell user={user} divisions={divisions} counts={counts} driveConnected={drive.sources > 0 ? drive.connected : null} driveLinkMode={drive.mode === 'link'}>{children}</AppShell>
   )
 }
