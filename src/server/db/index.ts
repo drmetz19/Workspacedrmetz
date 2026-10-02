@@ -13,7 +13,11 @@ export function db(): Sql {
     globalForDb.__csseSql = postgres(url, {
       max: 10,
       onnotice: () => {},
-      types: { bigint: postgres.BigInt },
+      types: {
+        bigint: postgres.BigInt,
+        // kolom `date` dikembalikan apa adanya (YYYY-MM-DD) agar tidak bergeser zona waktu
+        date: { to: 1082, from: [1082], serialize: (x: string) => x, parse: (x: string) => x },
+      },
     })
     globalForDb.__csseSqlUrl = url
   }

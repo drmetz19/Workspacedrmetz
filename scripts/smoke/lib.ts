@@ -94,7 +94,7 @@ export class Client {
     const url = path.startsWith('http') ? path : BASE + path
     const res = await fetch(url, { method, headers, body, redirect: 'manual' })
     this.store(res)
-    const text = await res.text()
+    const text = (await res.text()).replace(/<!-- -->/g, "")
     const location = res.headers.get('location')
     return { status: res.status, location, text, headers: res.headers, json: () => JSON.parse(text) }
   }
@@ -162,4 +162,17 @@ export class Smoke {
     console.log(`  ${ok ? '✓' : '✗'} ${name}${!ok && detail ? `\n      → ${detail}` : ''}`)
   }
   get passed() { return this.checks.every((c) => c.ok) }
+}
+
+export async function categoryIdByName(name: string) {
+  const [r] = await sql()<{ category_id: string }[]>`select category_id from categories where category_name = ${name}`
+  return r?.category_id
+}
+
+/** Mendaftarkan dokumen lewat form; mengembalikan document_id dari redirect. */
+export async function createDoc(c: Client, form: Record<string, string>) {
+  const r = await c.post('/api/documents', form)
+  const m = r.location?.match(/\/documents\/([0-9a-f-]{36})/)
+  if (!m) throw new Error(`Gagal membuat dokumen: ${decodeLoc(r.location)}`)
+  return m[1]
 }

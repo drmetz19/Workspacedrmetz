@@ -61,11 +61,11 @@ Halaman admin untuk Owner: CRUD divisi, CRUD kategori (seed: Izin Operasional, S
 User berwenang membuat record dokumen secara manual (metadata + link/ID Drive), melihat daftar dan halaman detail (metadata, PIC, level, status, versi, tanggal, riwayat), mengedit metadata, mengarsipkan, dan menandai dokumen baru menggantikan dokumen lama (lama → SUPERSEDED, terhubung ke versi baru). Lewat service layer dengan audit. Permission di fase ini masih sederhana (Owner/GM penuh, Division User divisinya sendiri) — engine penuh di Phase 4.
 
 ### Acceptance criteria
-- [ ] Record dokumen dapat dibuat dengan `document_id` internal; `external_resource_id` unik (duplikat ditolak)
-- [ ] Halaman detail menampilkan seluruh metadata dan riwayat perubahan
-- [ ] Edit metadata dan arsip tercatat di audit (`DOCUMENT_CREATED`, `DOCUMENT_UPDATED`, `DOCUMENT_ARCHIVED`)
-- [ ] Menandai "menggantikan" mengubah dokumen lama jadi SUPERSEDED dan detail keduanya saling menautkan
-- [ ] Dokumen ARCHIVED/SUPERSEDED tidak muncul di daftar aktif secara default
+- [x] Record dokumen dapat dibuat dengan `document_id` internal; `external_resource_id` unik (duplikat ditolak)
+- [x] Halaman detail menampilkan seluruh metadata dan riwayat perubahan
+- [x] Edit metadata dan arsip tercatat di audit (`DOCUMENT_CREATED`, `DOCUMENT_UPDATED`, `DOCUMENT_ARCHIVED`)
+- [x] Menandai "menggantikan" mengubah dokumen lama jadi SUPERSEDED dan detail keduanya saling menautkan
+- [x] Dokumen ARCHIVED/SUPERSEDED tidak muncul di daftar aktif secara default
 
 ---
 

@@ -14,6 +14,7 @@ export function AppShell({ user, children }: { user: IdentityContext; children: 
         <nav className="nav-group" aria-label="Utama">
           <span className="nav-label">Kerja</span>
           <NavLink href="/" exact>Command Center</NavLink>
+          <NavLink href="/documents">Dokumen</NavLink>
         </nav>
         {owner && (
           <nav className="nav-group" aria-label="Administrasi">
