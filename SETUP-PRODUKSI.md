@@ -32,7 +32,7 @@ Undangan, reset password, dan notifikasi approval saat ini masuk tabel `email_ou
 
 ## 5. Lain-lain
 - `APP_URL=https://<domain-app>`
-- `CRON_SECRET` = string acak panjang (dipakai Vercel Cron: scan Drive 02.00 WIB, kedaluwarsa akses tiap jam — lihat `vercel.json`; cron per jam butuh plan Vercel Pro).
+- `CRON_SECRET` = string acak panjang (dipakai Vercel Cron: scan Drive 02.00 WIB, kedaluwarsa akses 03.00 WIB — lihat `vercel.json`. Plan Hobby hanya mengizinkan cron harian; akses tetap berakhir tepat waktu karena engine memeriksa `expires_at`).
 - `CSSE_BOOTSTRAP_OWNER_EMAIL` = email Google dr. Metz.
 
 ## Checklist uji setelah kredensial masuk
