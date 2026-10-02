@@ -251,6 +251,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Go-live Supabase · Migrasi 0009–0010: RLS aktif di semua tabel public + policy baca eksplisit untuk role sesi user, fungsi CSSE tidak bisa dipanggil lewat REST RPC, search_path fungsi dikunci — alasan: temuan Supabase security advisor. Project Supabase memakai region ap-northeast-2 (Seoul), bukan Singapore (D3).
 - 2026-10-02 · Phase 12 · Ditambah ekspor CSV audit, pencatatan pembukaan L1–2 lewat redirect CSSE, blokir TRUNCATE audit (bypass hanya via setting sesi untuk pemeliharaan/test) — alasan: checklist story 46 "dokumen dibuka" juga berlaku untuk L1–2; kebutuhan rekap untuk akreditasi.
 - 2026-10-02 · Phase 11 · Kartu "Akan kedaluwarsa" juga memuat dokumen yang sudah lewat (ditandai kritis); divisi punya "penanggung jawab" (manager) yang diatur Owner — alasan: mengikuti mockup Stitch & dokumen lewat masa berlaku justru paling mendesak.
 - 2026-10-02 · Phase 10 · Pertanyaan tanpa kandidat dijawab deterministik tanpa memanggil AI; sitasi dibatasi ke daftar kandidat — alasan: hemat biaya & mencegah AI menyebut dokumen di luar izin.
