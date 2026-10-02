@@ -140,10 +140,10 @@ AI adapter (satu interface, satu provider). Saat scan, folder STANDARD: teks yan
 `get_authorized_document` + route proxy file: sistem mengambil file dari Shared Drive terbatas via akun service dan menyajikannya ke user berhak (view/download; Google Docs/Sheets native diekspor ke PDF). Read-only. Setiap buka/unduh diaudit.
 
 ### Acceptance criteria
-- [ ] Owner/PIC dapat membuka file L3–5 lewat CSSE tanpa punya akses Drive langsung
-- [ ] User tanpa hak mendapat `ACCESS_DENIED` dari route proxy (tidak ada bypass via ID)
-- [ ] Dokumen Google native tersaji sebagai PDF
-- [ ] Event `DOCUMENT_OPENED` / `DOCUMENT_DOWNLOADED` tercatat untuk setiap akses
+- [x] Owner/PIC dapat membuka file L3–5 lewat CSSE tanpa punya akses Drive langsung
+- [x] User tanpa hak mendapat `ACCESS_DENIED` dari route proxy (tidak ada bypass via ID)
+- [x] Dokumen Google native tersaji sebagai PDF
+- [x] Event `DOCUMENT_OPENED` / `DOCUMENT_DOWNLOADED` tercatat untuk setiap akses
 
 ---
 

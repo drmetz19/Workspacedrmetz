@@ -154,7 +154,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ### Google Drive
 - Akses Drive lewat **akun service / domain-wide delegation** milik Google Workspace organisasi.
 - Folder **standar** (L1–2): file tetap di Drive biasa; CSSE hanya index + link.
-- Folder **terbatas** (L3–5): Shared Drive yang hanya bisa diakses akun service CSSE + Owner. File dibuka user lewat CSSE: sistem mengambil file dan menyajikan view/download (file Google Docs/Sheets native diekspor ke PDF). Akses read-only — mengedit file L3–5 tidak lewat CSSE di MVP.
+- Folder **terbatas** (L3–5): Shared Drive yang hanya bisa diakses akun service CSSE + Owner. File dibuka user lewat CSSE: sistem mengambil file dan menyajikan view/download (file Google Docs/Sheets native diekspor ke PDF). Akses read-only — mengedit file L3–5 tidak lewat CSSE di MVP. Respons proxy `no-store`; hanya PDF/gambar/teks yang ditampilkan inline, tipe lain (mis. HTML) selalu diunduh agar tidak berjalan di origin aplikasi. File yang tidak ditemukan saat dibuka otomatis ditandai "sumber hilang".
 - Deteksi perubahan: re-scan manual + scan otomatis harian (Vercel Cron 02.00 WIB, dilindungi `CRON_SECRET`); dedupe berdasarkan `external_resource_id`.
 - Akses Drive lewat adapter: `google` (Drive API v3, akun service read-only, opsional domain-wide delegation) dan `mock` (pengembangan/test).
 - Saat menghubungkan folder, CSSE memverifikasi aksesnya; untuk folder terbatas, CSSE mencatat siapa saja yang masih punya akses Drive selain akun CSSE dan menampilkan peringatan.
@@ -237,6 +237,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 8 · Proxy file memaksa unduh untuk tipe non-aman & menandai sumber hilang saat file tidak ditemukan — alasan: mencegah XSS dari file Drive dan menjaga status registry akurat.
 - 2026-10-02 · Phase 7 · Ditambah provider `mock` deterministik untuk dev/test dan mode `none` (AI nonaktif) — alasan: D1 (provider & kebijakan data) belum diputuskan; alur tetap teruji end-to-end tanpa mengirim data ke vendor.
 - 2026-10-02 · Phase 6 · Ditambah status `REJECTED`, tabel `document_suggestions` (saran terpisah dari field final), pemeriksaan siapa yang masih punya akses ke folder terbatas, aturan level saat konfirmasi draft — alasan: edge case scan ulang & mencegah dokumen sensitif tetap terbuka di Drive.
 - 2026-10-02 · Phase 5 · Kata kunci dicocokkan pada data yang sudah diamankan izin (nomor & ringkasan dokumen yang belum boleh dibuka tidak ikut dicari); pencarian juga mencocokkan nama PIC/kategori/divisi; sidebar per divisi → pencarian per divisi. UI di-restyle mengikuti design system Stitch dari Owner — alasan: mencegah kebocoran isi lewat kata kunci; permintaan desain Owner.

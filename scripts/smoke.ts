@@ -13,6 +13,7 @@ const PHASES: Record<number, string> = {
   5: 'Pencarian filter',
   6: 'Koneksi Drive + scan',
   7: 'AI saran metadata',
+  8: 'Buka L3–5 lewat CSSE',
 }
 
 async function main() {
