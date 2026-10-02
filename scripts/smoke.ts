@@ -12,6 +12,7 @@ const PHASES: Record<number, string> = {
   4: 'Permission engine',
   5: 'Pencarian filter',
   6: 'Koneksi Drive + scan',
+  7: 'AI saran metadata',
 }
 
 async function main() {

@@ -167,6 +167,9 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Saat ingest: folder standar → AI membaca teks yang bisa diekstrak (PDF teks, Google Docs); folder terbatas → hanya nama file + metadata Drive. Tanpa OCR.
 - Ask AI: alur **intent → identity → permission scope → query registry (metadata + ringkasan terkonfirmasi) → model menyusun jawaban + sitasi record**. Tanpa embedding, tanpa vector DB, tanpa membaca isi file saat query.
 - Semua query AI dicatat di audit.
+- Arsitektur: service → **AI orchestrator** (satu-satunya tempat prompt dibangun & keluaran divalidasi skema) → **provider adapter** (`anthropic` | `mock` | `none`, dipilih via `AI_PROVIDER`). Isi dokumen diperlakukan sebagai data (anti prompt-injection); keluaran AI di luar daftar kategori/divisi/orang dibuang, tanggal tidak valid dibuang, level folder terbatas dipaksa ≥ L3.
+- Kegagalan AI tidak menggagalkan scan — draft tetap dibuat dengan saran heuristik nama file.
+- Ekstraksi teks: Google Docs/Sheets/Slides (export teks), PDF teks (parser ringan internal), txt. Gambar/PDF scan → `CONTENT_UNREADABLE` (tanpa OCR).
 
 ### Desain UI
 - Mengikuti mockup Stitch "Application Mockup Generator" (Clinical Governance Workspace): Command Center berisi kartu ringkasan, grid divisi + PIC, tabel "Perlu Perhatian Segera", bar Tanya AI; layar Persetujuan dengan tab + panel ringkasan.
@@ -234,6 +237,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 7 · Ditambah provider `mock` deterministik untuk dev/test dan mode `none` (AI nonaktif) — alasan: D1 (provider & kebijakan data) belum diputuskan; alur tetap teruji end-to-end tanpa mengirim data ke vendor.
 - 2026-10-02 · Phase 6 · Ditambah status `REJECTED`, tabel `document_suggestions` (saran terpisah dari field final), pemeriksaan siapa yang masih punya akses ke folder terbatas, aturan level saat konfirmasi draft — alasan: edge case scan ulang & mencegah dokumen sensitif tetap terbuka di Drive.
 - 2026-10-02 · Phase 5 · Kata kunci dicocokkan pada data yang sudah diamankan izin (nomor & ringkasan dokumen yang belum boleh dibuka tidak ikut dicari); pencarian juga mencocokkan nama PIC/kategori/divisi; sidebar per divisi → pencarian per divisi. UI di-restyle mengikuti design system Stitch dari Owner — alasan: mencegah kebocoran isi lewat kata kunci; permintaan desain Owner.
 - 2026-10-02 · Phase 4 · Engine izin dilengkapi aturan yang tidak tertulis di tabel level: GM kehilangan hak default pada dokumen OWNER_APPROVAL_REQUIRED, metadata sensitif disembunyikan bagi yang hanya 'boleh tahu', batas level saat pendaftaran per role, auto-PIC untuk Division User, cabut hak REST Supabase — alasan: menutup celah kebocoran & mencegah pembuat dokumen terkunci dari dokumennya sendiri. Perlu konfirmasi Owner (lihat A9).

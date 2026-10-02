@@ -17,6 +17,7 @@ export const smokeEnv: Record<string, string> = {
   CSSE_BOOTSTRAP_OWNER_NAME: 'dr. Metz',
   DRIVE_PROVIDER: 'mock',
   CRON_SECRET: 'smoke-cron',
+  AI_PROVIDER: 'mock',
 }
 
 let sqlClient: postgres.Sql | null = null

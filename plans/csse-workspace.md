@@ -125,11 +125,11 @@ Drive adapter di integration layer. Owner menghubungkan folder/Shared Drive dan 
 AI adapter (satu interface, satu provider). Saat scan, folder STANDARD: teks yang bisa diekstrak (PDF teks, Google Docs) dikirim ke AI untuk saran jenis, PIC, divisi, level, nomor dokumen, tanggal, ringkasan. Folder RESTRICTED: hanya nama file + metadata Drive yang dikirim. File tak terbaca → saran dari nama file + flag CONTENT_UNREADABLE. Saran disimpan terpisah dan ditampilkan sebagai "saran" di Review Draft.
 
 ### Acceptance criteria
-- [ ] Draft dari folder STANDARD berisi saran metadata dan ringkasan
-- [ ] Untuk folder RESTRICTED, payload ke AI adapter terbukti tidak berisi isi file (diuji di level adapter)
-- [ ] File scan gambar / rusak tetap menjadi draft dengan flag CONTENT_UNREADABLE
-- [ ] UI review membedakan field saran vs field terkonfirmasi; konfirmasi menyalin saran ke field final
-- [ ] Mengganti implementasi adapter (mock provider) tidak memerlukan perubahan di service layer
+- [x] Draft dari folder STANDARD berisi saran metadata dan ringkasan
+- [x] Untuk folder RESTRICTED, payload ke AI adapter terbukti tidak berisi isi file (diuji di level adapter)
+- [x] File scan gambar / rusak tetap menjadi draft dengan flag CONTENT_UNREADABLE
+- [x] UI review membedakan field saran vs field terkonfirmasi; konfirmasi menyalin saran ke field final
+- [x] Mengganti implementasi adapter (mock provider) tidak memerlukan perubahan di service layer
 
 ---
 
