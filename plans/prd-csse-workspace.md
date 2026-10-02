@@ -173,6 +173,9 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Dipakai untuk dua hal saja: (1) saran metadata saat ingest, (2) Ask AI search.
 - Saat ingest: folder standar → AI membaca teks yang bisa diekstrak (PDF teks, Google Docs); folder terbatas → hanya nama file + metadata Drive. Tanpa OCR.
 - Ask AI: alur **intent → identity → permission scope → query registry (metadata + ringkasan terkonfirmasi) → model menyusun jawaban + sitasi record**. Tanpa embedding, tanpa vector DB, tanpa membaca isi file saat query.
+  - Retrieval: hanya dokumen yang boleh diketahui (RLS + engine), maksimal 25 kandidat teratas berdasarkan kecocokan kata; nomor & ringkasan hanya untuk dokumen yang boleh dibuka.
+  - Output policy: sitasi di luar daftar kandidat dibuang. Bila tidak ada kandidat, sistem langsung menjawab "tidak menemukan" tanpa memanggil AI.
+  - Pertanyaan tentang approval menyertakan jumlah permintaan yang menunggu user tersebut.
 - Semua query AI dicatat di audit.
 - Arsitektur: service → **AI orchestrator** (satu-satunya tempat prompt dibangun & keluaran divalidasi skema) → **provider adapter** (`anthropic` | `mock` | `none`, dipilih via `AI_PROVIDER`). Isi dokumen diperlakukan sebagai data (anti prompt-injection); keluaran AI di luar daftar kategori/divisi/orang dibuang, tanggal tidak valid dibuang, level folder terbatas dipaksa ≥ L3.
 - Kegagalan AI tidak menggagalkan scan — draft tetap dibuat dengan saran heuristik nama file.
@@ -244,6 +247,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 10 · Pertanyaan tanpa kandidat dijawab deterministik tanpa memanggil AI; sitasi dibatasi ke daftar kandidat — alasan: hemat biaya & mencegah AI menyebut dokumen di luar izin.
 - 2026-10-02 · Phase 9 · Ditambah: pembatalan permintaan oleh pemohon, permintaan otomatis untuk aksi ubah metadata (bukan hanya buka), notifikasi email, cron per jam — alasan: Scenario 3 mencakup "aksi" apa pun pada dokumen wajib persetujuan Owner.
 - 2026-10-02 · Phase 8 · Proxy file memaksa unduh untuk tipe non-aman & menandai sumber hilang saat file tidak ditemukan — alasan: mencegah XSS dari file Drive dan menjaga status registry akurat.
 - 2026-10-02 · Phase 7 · Ditambah provider `mock` deterministik untuk dev/test dan mode `none` (AI nonaktif) — alasan: D1 (provider & kebijakan data) belum diputuskan; alur tetap teruji end-to-end tanpa mengirim data ke vendor.

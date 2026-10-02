@@ -92,3 +92,60 @@ export async function suggestMetadata(input: SuggestInput): Promise<{ fields: Su
   if (!input.text) delete fields.summary
   return { fields, provider: res.provider, scope }
 }
+
+// ── Ask AI (pencarian bahasa natural) ───────────────────────────────────
+export interface AskContextDoc {
+  ref: string
+  name: string
+  status: string
+  version: number
+  level: number
+  category: string | null
+  division: string | null
+  pic: string | null
+  number: string | null
+  effectiveDate: string | null
+  expiryDate: string | null
+  summary: string | null
+}
+
+const AnswerSchema = z.object({
+  answer: z.string().trim().min(1).max(4000),
+  citations: z.array(z.string()).max(20).catch([]),
+  found: z.boolean().catch(true),
+})
+
+/**
+ * Menjawab pertanyaan HANYA dari dokumen di `docs` — daftar yang sudah difilter izin oleh pemanggil.
+ * Output policy: sitasi di luar daftar dibuang, penanda [Dx] yang tidak dikenal dihapus dari jawaban.
+ */
+export async function answerFromDocuments(input: { question: string; today: string; docs: AskContextDoc[]; pendingApprovals?: number | null }) {
+  const provider = aiProvider()
+  if (!provider.isConfigured()) throw new AiUnavailableError('AI belum dikonfigurasi.')
+  const res = await provider.generate({
+    task: 'answer_search',
+    json: true,
+    maxTokens: 900,
+    system: [
+      'Anda asisten pencarian dokumen organisasi Dr. Metz (CSSE). Jawab dalam Bahasa Indonesia yang ringkas.',
+      UNTRUSTED_RULE,
+      'Jawab HANYA berdasarkan "documents" di INPUT_JSON — itu adalah seluruh dokumen yang boleh diketahui penanya.',
+      'Jangan menyebut, menebak, atau mengisyaratkan dokumen lain di luar daftar. Jangan mengarang nomor, tanggal, atau isi.',
+      'Setiap dokumen yang disebut wajib diberi sitasi [ref] persis seperti di daftar, mis. [D3].',
+      'Utamakan dokumen berstatus ACTIVE; sebut bila sebuah dokumen sudah SUPERSEDED (tidak berlaku).',
+      'Jika tidak ada dokumen yang cocok, katakan terus terang tidak ditemukan dan sarankan memakai pencarian filter. Set found=false.',
+      'Balas HANYA JSON: {"answer": string, "citations": string[], "found": boolean}.',
+    ].join('\n'),
+    prompt: `Pertanyaan pengguna dan dokumen yang boleh diakses.\nINPUT_JSON:${JSON.stringify({
+      question: input.question,
+      today: input.today,
+      pendingApprovalsForUser: input.pendingApprovals ?? undefined,
+      documents: input.docs,
+    })}`,
+  })
+  const parsed = AnswerSchema.parse(extractJson(res.text))
+  const allowed = new Set(input.docs.map((d) => d.ref))
+  const citations = [...new Set(parsed.citations.filter((c) => allowed.has(c)))]
+  const answer = parsed.answer.replace(/\[(D\d+)\]/g, (m, ref: string) => (allowed.has(ref) ? m : ''))
+  return { answer, citations, found: parsed.found && citations.length > 0, provider: res.provider }
+}

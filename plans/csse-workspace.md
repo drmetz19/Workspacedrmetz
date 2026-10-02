@@ -171,12 +171,12 @@ User mengajukan akses L3–5 dengan alasan → approver ditentukan otomatis oleh
 Chat pencarian bahasa natural. Alur: intent → identity → permission scope → query registry (metadata + ringkasan terkonfirmasi, hanya dokumen dalam scope) → AI menyusun jawaban dengan sitasi record yang bisa diklik. Tanpa embedding/vector, tanpa membaca isi file. Bila tak ada hasil, bilang jujur dan sarankan pencarian filter. Bila provider AI down, tampilkan pesan dan arahkan ke pencarian filter. Setiap query diaudit (`AI_DOCUMENT_QUERIED`).
 
 ### Acceptance criteria
-- [ ] "cari izin operasional klinik Jakarta terbaru" mengembalikan dokumen ACTIVE yang benar dengan sitasi
-- [ ] Konteks yang dikirim ke AI terbukti hanya berisi dokumen dalam permission scope user (diuji di level service)
-- [ ] User HR bertanya tentang dokumen Executive → jawaban tidak memuat petunjuk isi/keberadaannya
-- [ ] Query tanpa hasil → AI menyatakan tidak menemukan, tidak mengarang
-- [ ] Provider AI dimatikan (mock error) → pesan "AI sementara tidak tersedia", pencarian filter tetap jalan
-- [ ] Setiap query tercatat di audit
+- [x] "cari izin operasional klinik Jakarta terbaru" mengembalikan dokumen ACTIVE yang benar dengan sitasi
+- [x] Konteks yang dikirim ke AI terbukti hanya berisi dokumen dalam permission scope user (diuji di level service)
+- [x] User HR bertanya tentang dokumen Executive → jawaban tidak memuat petunjuk isi/keberadaannya
+- [x] Query tanpa hasil → AI menyatakan tidak menemukan, tidak mengarang
+- [x] Provider AI dimatikan (mock error) → pesan "AI sementara tidak tersedia", pencarian filter tetap jalan
+- [x] Setiap query tercatat di audit
 
 ---
 
