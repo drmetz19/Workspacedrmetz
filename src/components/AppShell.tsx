@@ -57,6 +57,9 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
           <NavLink href="/" exact icon="dashboard">Beranda / Overview</NavLink>
           <NavLink href="/documents" icon="folder">Direktori Dokumen</NavLink>
           <NavLink href="/search" icon="manage_search">Pencarian</NavLink>
+          {(owner || user.roleId === 'GM' || !!counts.draftsToReview) && (
+            <NavLink href="/documents/review" icon="rate_review" count={counts.draftsToReview}>Review Draft</NavLink>
+          )}
         </nav>
         {divisions.length > 0 && (
           <nav className="nav-group" aria-label="Divisi">
@@ -72,6 +75,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
             <NavLink href="/admin/users" icon="badge">User &amp; Undangan</NavLink>
             <NavLink href="/admin/divisions" icon="account_tree">Divisi</NavLink>
             <NavLink href="/admin/categories" icon="sell">Kategori</NavLink>
+            <NavLink href="/admin/sources" icon="cloud_sync">Sumber Drive</NavLink>
           </nav>
         )}
         </Suspense>

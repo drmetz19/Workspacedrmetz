@@ -48,6 +48,9 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
         </div>
       </div>
 
+      {d.status === 'DRAFT' && (
+        <div className="flash flash-warn">Draft hasil scan Drive — belum bisa dicari. <Link href={`/documents/review/${d.documentId}`}>Review &amp; konfirmasi</Link></div>
+      )}
       {d.status === 'SUPERSEDED' && d.supersededBy && (
         <div className="flash flash-warn">
           Dokumen ini sudah tidak berlaku. Versi aktif: <Link href={`/documents/${d.supersededBy.documentId}`}>{d.supersededBy.documentName} (v{d.supersededBy.version})</Link>

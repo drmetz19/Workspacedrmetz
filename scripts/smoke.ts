@@ -11,6 +11,7 @@ const PHASES: Record<number, string> = {
   3: 'Registry manual + versi',
   4: 'Permission engine',
   5: 'Pencarian filter',
+  6: 'Koneksi Drive + scan',
 }
 
 async function main() {

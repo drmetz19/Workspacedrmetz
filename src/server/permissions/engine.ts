@@ -12,7 +12,7 @@ import type { IdentityContext } from '../context'
  * | L5    | Owner                             | Owner                               | lewat CSSE  | Owner            |
  * + grant eksplisit aktif menambah hak di atas default.
  * + OWNER_APPROVAL_REQUIRED: GM kehilangan hak default buka/ubah; approver selalu Owner.
- * + DRAFT: hanya Owner, GM, PIC (antrean review).
+ * + DRAFT/REJECTED: hanya Owner, GM, PIC (antrean review).
  *
  * Fungsi SQL `csse_can_view_document` adalah cermin `canView` — paritas diuji di tests/phase4-permissions.test.ts.
  */
@@ -79,7 +79,7 @@ export const openMode = (d: DocFacts): 'DRIVE' | 'CSSE' => (d.securityLevel <= 2
 
 export function canView(ctx: IdentityContext, d: DocFacts, grants: Grant[] = [], now = new Date()): boolean {
   if (isOwner(ctx)) return true
-  if (d.status === 'DRAFT') return isGm(ctx) || isPic(ctx, d)
+  if (d.status === 'DRAFT' || d.status === 'REJECTED') return isGm(ctx) || isPic(ctx, d)
   const g = applicableGrants(ctx, grants, now)
   if (g.has('VIEW') || g.has('OPEN') || g.has('DOWNLOAD') || g.has('EDIT_METADATA')) return true
   switch (d.securityLevel) {
@@ -123,7 +123,7 @@ export function decide(ctx: IdentityContext, d: DocFacts, action: Action, grants
     case 'VIEW':
       return allow('VISIBLE')
     case 'OPEN': {
-      if (d.status === 'DRAFT') return isOwner(ctx) || isPic(ctx, d) || isGm(ctx) ? allow('DRAFT_REVIEWER') : deny('DRAFT')
+      if (d.status === 'DRAFT' || d.status === 'REJECTED') return isOwner(ctx) || isPic(ctx, d) || isGm(ctx) ? allow('DRAFT_REVIEWER') : deny('DRAFT')
       if (defaultCanOpen(ctx, d)) return allow('LEVEL_POLICY')
       if (g.has('OPEN') || g.has('DOWNLOAD')) return allow('EXPLICIT_GRANT')
       return deny(isGm(ctx) && d.ownerApprovalRequired ? 'OWNER_APPROVAL_REQUIRED' : 'LEVEL_POLICY', d.securityLevel >= 3)

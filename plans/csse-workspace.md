@@ -108,12 +108,12 @@ Halaman pencarian dengan keyword + filter gabungan (kategori, divisi, level, PIC
 Drive adapter di integration layer. Owner menghubungkan folder/Shared Drive dan menandainya STANDARD atau RESTRICTED. Scan (manual + cron harian) membuat record DRAFT untuk file baru dengan saran dari nama file & metadata Drive; file yang sudah terdaftar dilewati; file yang hilang/pindah ditandai SOURCE_MISSING. Antrean Review Draft: PIC/Owner konfirmasi, koreksi, atau tolak → ACTIVE.
 
 ### Acceptance criteria
-- [ ] Owner dapat menghubungkan folder test dan melihat status sinkronisasi
-- [ ] Scan pertama membuat N draft untuk N file; scan kedua tanpa perubahan membuat 0 draft baru
-- [ ] File di folder RESTRICTED menghasilkan draft dengan level default ≥ L3
-- [ ] Menghapus file di Drive lalu scan → record bertanda SOURCE_MISSING, tidak terhapus
-- [ ] Draft tidak muncul di pencarian sampai dikonfirmasi; konfirmasi mengubah status jadi ACTIVE dan diaudit
-- [ ] Cron scan harian berjalan (dapat dipicu manual saat smoke test)
+- [x] Owner dapat menghubungkan folder test dan melihat status sinkronisasi
+- [x] Scan pertama membuat N draft untuk N file; scan kedua tanpa perubahan membuat 0 draft baru
+- [x] File di folder RESTRICTED menghasilkan draft dengan level default ≥ L3
+- [x] Menghapus file di Drive lalu scan → record bertanda SOURCE_MISSING, tidak terhapus
+- [x] Draft tidak muncul di pencarian sampai dikonfirmasi; konfirmasi mengubah status jadi ACTIVE dan diaudit
+- [x] Cron scan harian berjalan (dapat dipicu manual saat smoke test)
 
 ---
 

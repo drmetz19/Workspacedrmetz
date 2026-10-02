@@ -15,6 +15,7 @@ export function NavLink({ href, children, exact, icon, count, matchQuery }: {
   const search = useSearchParams()
   const [base, query] = href.split('?')
   let active = exact ? path === base : path === base || path.startsWith(base + '/')
+  if (base === '/documents' && path.startsWith('/documents/review')) active = false
   if (matchQuery) active = path === base && !!query && search.toString() === query
   else if (!exact && base === '/search' && search.get('divisionId')) active = false
   return (

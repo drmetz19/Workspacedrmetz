@@ -15,6 +15,8 @@ export const smokeEnv: Record<string, string> = {
   CSSE_ALLOW_DEV_IDP: '1',
   CSSE_BOOTSTRAP_OWNER_EMAIL: OWNER_EMAIL,
   CSSE_BOOTSTRAP_OWNER_NAME: 'dr. Metz',
+  DRIVE_PROVIDER: 'mock',
+  CRON_SECRET: 'smoke-cron',
 }
 
 let sqlClient: postgres.Sql | null = null
@@ -175,4 +177,8 @@ export async function createDoc(c: Client, form: Record<string, string>) {
   const m = r.location?.match(/\/documents\/([0-9a-f-]{36})/)
   if (!m) throw new Error(`Gagal membuat dokumen: ${decodeLoc(r.location)}`)
   return m[1]
+}
+
+export async function addDriveFile(container: string, id: string, name: string, text: string | null = null, mime = 'application/pdf') {
+  await sql()`insert into dev_drive_files (container_id, file_id, name, mime_type, text_content) values (${container}, ${id}, ${name}, ${mime}, ${text})`
 }

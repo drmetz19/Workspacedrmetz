@@ -155,7 +155,11 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Akses Drive lewat **akun service / domain-wide delegation** milik Google Workspace organisasi.
 - Folder **standar** (L1–2): file tetap di Drive biasa; CSSE hanya index + link.
 - Folder **terbatas** (L3–5): Shared Drive yang hanya bisa diakses akun service CSSE + Owner. File dibuka user lewat CSSE: sistem mengambil file dan menyajikan view/download (file Google Docs/Sheets native diekspor ke PDF). Akses read-only — mengedit file L3–5 tidak lewat CSSE di MVP.
-- Deteksi perubahan: re-scan manual + scan otomatis harian; dedupe berdasarkan `external_resource_id`.
+- Deteksi perubahan: re-scan manual + scan otomatis harian (Vercel Cron 02.00 WIB, dilindungi `CRON_SECRET`); dedupe berdasarkan `external_resource_id`.
+- Akses Drive lewat adapter: `google` (Drive API v3, akun service read-only, opsional domain-wide delegation) dan `mock` (pengembangan/test).
+- Saat menghubungkan folder, CSSE memverifikasi aksesnya; untuk folder terbatas, CSSE mencatat siapa saja yang masih punya akses Drive selain akun CSSE dan menampilkan peringatan.
+- Draft yang ditolak berstatus `REJECTED` (tetap tersimpan) sehingga scan berikutnya tidak membuatnya ulang. Dokumen manual yang file-nya ditemukan saat scan ditautkan ke sumber (tidak diduplikasi).
+- Konfirmasi draft dari folder terbatas wajib ≥ L3; draft dari folder standar hanya Owner yang boleh mengonfirmasi sebagai L3–5 (karena file masih bisa dibuka langsung di Drive).
 
 ### AI
 - Satu **AI adapter** (interface tunggal) dengan satu provider di MVP.
@@ -230,6 +234,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 6 · Ditambah status `REJECTED`, tabel `document_suggestions` (saran terpisah dari field final), pemeriksaan siapa yang masih punya akses ke folder terbatas, aturan level saat konfirmasi draft — alasan: edge case scan ulang & mencegah dokumen sensitif tetap terbuka di Drive.
 - 2026-10-02 · Phase 5 · Kata kunci dicocokkan pada data yang sudah diamankan izin (nomor & ringkasan dokumen yang belum boleh dibuka tidak ikut dicari); pencarian juga mencocokkan nama PIC/kategori/divisi; sidebar per divisi → pencarian per divisi. UI di-restyle mengikuti design system Stitch dari Owner — alasan: mencegah kebocoran isi lewat kata kunci; permintaan desain Owner.
 - 2026-10-02 · Phase 4 · Engine izin dilengkapi aturan yang tidak tertulis di tabel level: GM kehilangan hak default pada dokumen OWNER_APPROVAL_REQUIRED, metadata sensitif disembunyikan bagi yang hanya 'boleh tahu', batas level saat pendaftaran per role, auto-PIC untuk Division User, cabut hak REST Supabase — alasan: menutup celah kebocoran & mencegah pembuat dokumen terkunci dari dokumennya sendiri. Perlu konfirmasi Owner (lihat A9).
 - 2026-10-02 · Phase 3 · Riwayat dokumen diambil dari audit event (bukan tabel riwayat terpisah); tautan Drive apa pun bentuknya (file/Docs/Sheets/open?id=) dinormalisasi ke file ID untuk deteksi duplikat; satu dokumen hanya bisa digantikan satu versi (rantai linear) — alasan: audit sudah menjadi sumber kebenaran, dan duplikat link berbeda-bentuk harus tertangkap.

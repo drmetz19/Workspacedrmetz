@@ -10,7 +10,7 @@ import { visibleDocumentsWhere } from '../permissions/sql'
 import { loadGrants, loadGrantsFor } from '../permissions/grants'
 
 // ── Tipe ────────────────────────────────────────────────────────────────
-export type DocumentStatus = 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'ARCHIVED'
+export type DocumentStatus = 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'ARCHIVED' | 'REJECTED'
 
 export interface DocumentRow {
   document_id: string
@@ -195,7 +195,7 @@ async function deny(ctx: IdentityContext, id: string, attempted: string, message
 }
 
 // ── Input ───────────────────────────────────────────────────────────────
-const DocumentInput = z
+export const DocumentInput = z
   .object({
     documentName: z.string().trim().min(3, 'minimal 3 karakter').max(200),
     documentNumber: optionalText,
@@ -418,7 +418,7 @@ export async function supersedeDocument(ctx: IdentityContext, newDocumentId: unk
 // ── Daftar ──────────────────────────────────────────────────────────────
 export interface ListOptions {
   /** ACTIVE (default) | INACTIVE (arsip & versi lama) | ALL */
-  status?: 'ACTIVE' | 'INACTIVE' | 'ALL'
+  status?: 'ACTIVE' | 'INACTIVE' | 'ALL' | 'DRAFT'
   scope?: 'all' | 'mine' | 'division'
   limit?: number
 }
@@ -429,7 +429,7 @@ export async function listDocuments(ctx: IdentityContext, opts: ListOptions): Pr
   const rows = await q<DocumentRow[]>`
     ${documentSelect(q)}
     where ${visibleDocumentsWhere(q, ctx)}
-      and ${status === 'ACTIVE' ? q`d.status = 'ACTIVE'` : status === 'INACTIVE' ? q`d.status in ('SUPERSEDED','ARCHIVED')` : q`d.status <> 'DRAFT'`}
+      and ${status === 'ACTIVE' ? q`d.status = 'ACTIVE'` : status === 'DRAFT' ? q`d.status = 'DRAFT'` : status === 'INACTIVE' ? q`d.status in ('SUPERSEDED','ARCHIVED')` : q`d.status not in ('DRAFT','REJECTED')`}
       and ${opts.scope === 'mine' ? q`d.pic_user_id = ${ctx.userId}` : opts.scope === 'division' ? q`d.division_id = ${ctx.divisionId}` : q`true`}
     order by d.updated_at desc
     limit ${opts.limit ?? 200}`

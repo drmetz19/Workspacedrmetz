@@ -95,7 +95,7 @@ export async function searchDocuments(ctx: IdentityContext, input: unknown): Pro
       select x.*, (select n.document_id from documents n where n.supersedes_document_id = x.document_id limit 1) as superseded_by
       from (${documentSelect(q)}
         where ${visibleDocumentsWhere(q, ctx)}
-          and ${f.status === 'ACTIVE' ? q`d.status = 'ACTIVE'` : f.status === 'INACTIVE' ? q`d.status in ('SUPERSEDED','ARCHIVED')` : q`d.status <> 'DRAFT'`}
+          and ${f.status === 'ACTIVE' ? q`d.status = 'ACTIVE'` : f.status === 'INACTIVE' ? q`d.status in ('SUPERSEDED','ARCHIVED')` : q`d.status not in ('DRAFT','REJECTED')`}
           and ${f.categoryId ? q`d.category_id = ${f.categoryId}` : q`true`}
           and ${f.divisionId ? q`d.division_id = ${f.divisionId}` : q`true`}
           and ${f.picUserId ? q`d.pic_user_id = ${f.picUserId}` : q`true`}
