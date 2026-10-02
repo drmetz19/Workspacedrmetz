@@ -240,3 +240,4 @@ dl.meta dd { margin: 0; }
 .chat-answer { background: var(--surface-2); border-radius: var(--radius); padding: 14px 16px; white-space: pre-wrap; }
 .cite { display: inline-block; font-size: 10px; font-weight: 700; background: var(--accent-soft); color: var(--accent); border: 1px solid #a5f3fc; border-radius: 3px; padding: 0 5px; margin: 0 2px; }
 .footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--ink-3); }
+@media (max-width: 900px) { .access-grid { grid-template-columns: 1fr !important; } }

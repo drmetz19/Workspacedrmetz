@@ -154,12 +154,12 @@ AI adapter (satu interface, satu provider). Saat scan, folder STANDARD: teks yan
 User mengajukan akses L3–5 dengan alasan → approver ditentukan otomatis oleh aturan (GM/Owner untuk L3, Owner untuk L4–5 dan OWNER_APPROVAL_REQUIRED) → approver menyetujui (durasi 1/7/30 hari) atau menolak (dengan alasan) → grant sementara dibuat → cron mencabut saat kedaluwarsa. GM yang mencoba aksi pada dokumen OWNER_APPROVAL_REQUIRED otomatis membuat request ke Owner. Halaman "Permintaan Saya" dan "Menunggu Saya".
 
 ### Acceptance criteria
-- [ ] Staf mengajukan akses L3; GM melihatnya di "Menunggu Saya"; setelah disetujui 1 hari, staf bisa membuka via proxy
-- [ ] Request L4/L5 hanya muncul di antrean Owner, tidak di GM
-- [ ] Setelah `expires_at` lewat (cron dipicu), staf kembali `ACCESS_DENIED`; status request EXPIRED
-- [ ] Penolakan menampilkan alasan ke pemohon
-- [ ] GM membuka dokumen OWNER_APPROVAL_REQUIRED → request ke Owner terbentuk, aksi tidak dieksekusi
-- [ ] Semua langkah tercatat (`APPROVAL_REQUESTED`, `ACCESS_APPROVED`, `ACCESS_REJECTED`, `ACCESS_EXPIRED`)
+- [x] Staf mengajukan akses L3; GM melihatnya di "Menunggu Saya"; setelah disetujui 1 hari, staf bisa membuka via proxy
+- [x] Request L4/L5 hanya muncul di antrean Owner, tidak di GM
+- [x] Setelah `expires_at` lewat (cron dipicu), staf kembali `ACCESS_DENIED`; status request EXPIRED
+- [x] Penolakan menampilkan alasan ke pemohon
+- [x] GM membuka dokumen OWNER_APPROVAL_REQUIRED → request ke Owner terbentuk, aksi tidak dieksekusi
+- [x] Semua langkah tercatat (`APPROVAL_REQUESTED`, `ACCESS_APPROVED`, `ACCESS_REJECTED`, `ACCESS_EXPIRED`)
 
 ---
 

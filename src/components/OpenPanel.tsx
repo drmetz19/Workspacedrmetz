@@ -1,9 +1,11 @@
 import type { DocumentDetail } from '@/server/services/documents'
+import type { AccessRequestDto } from '@/server/services/access'
+import { fmtDateTime } from '@/lib/labels'
 
 const APPROVER = { GM: 'GM atau Owner', OWNER: 'Owner' } as const
 
 /** Cara membuka dokumen sesuai kebijakan level. */
-export function OpenPanel({ doc }: { doc: DocumentDetail }) {
+export function OpenPanel({ doc, myRequest }: { doc: DocumentDetail; myRequest?: AccessRequestDto | null }) {
   const p = doc.permissions
   if (doc.status === 'DRAFT') return null
   if (p.canOpen && p.openMode === 'DRIVE') {
@@ -30,6 +32,17 @@ export function OpenPanel({ doc }: { doc: DocumentDetail }) {
         <span className="spacer" />
         <a className="btn btn-primary" href={`/api/files/${doc.documentId}`} target="_blank" rel="noreferrer">Buka lewat CSSE</a>
         <a className="btn" href={`/api/files/${doc.documentId}?download=1`}>Unduh</a>
+        {myRequest?.status === 'APPROVED' && <div className="small muted" style={{ flexBasis: '100%' }}>Akses sementara berlaku s.d. {fmtDateTime(myRequest.expiresAt)}</div>}
+      </div>
+    )
+  }
+  if (myRequest?.status === 'PENDING') {
+    return (
+      <div className="card" id="open">
+        <span className="badge badge-warn">Menunggu keputusan</span>
+        <p className="small" style={{ marginTop: 8 }}>
+          Permintaan akses Anda ({fmtDateTime(myRequest.createdAt)}) sedang menunggu keputusan {myRequest.approverRole === 'OWNER' ? 'Owner' : 'GM/Owner'}.
+        </p>
       </div>
     )
   }
@@ -42,6 +55,9 @@ export function OpenPanel({ doc }: { doc: DocumentDetail }) {
           : `Dokumen Level ${doc.securityLevel} hanya dapat dibuka oleh pihak yang berwenang.`}
         {p.canRequestAccess && p.approver && ` Ajukan permintaan akses — akan diputuskan oleh ${APPROVER[p.approver]}.`}
       </p>
+      {myRequest?.status === 'REJECTED' && (
+        <p className="small" style={{ color: 'var(--danger-ink)' }}>Permintaan sebelumnya ditolak: {myRequest.decisionNote}</p>
+      )}
       {p.canRequestAccess && (
         <form action="/api/access-requests" method="post" className="stack" style={{ maxWidth: 560 }}>
           <input type="hidden" name="documentId" value={doc.documentId} />

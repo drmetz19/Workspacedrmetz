@@ -5,6 +5,7 @@ import type { IdentityContext } from '../context'
 import { decide } from '../permissions/engine'
 import { driveAdapter, DriveAuthError, DriveNotFoundError, DriveUnavailableError } from '../integrations/drive'
 import { facts, loadVisibleDocumentWithGrants } from './documents'
+import { autoRequestOwnerApproval } from './access'
 
 /** Tipe yang aman ditampilkan inline di origin CSSE; selain itu dipaksa unduh (mencegah HTML/JS berjalan di origin app). */
 const INLINE_SAFE = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'text/plain'])
@@ -26,6 +27,10 @@ export async function getAuthorizedDocument(ctx: IdentityContext, documentId: un
   const dec = decide(ctx, facts(row), 'OPEN', grants)
   if (!dec.allowed) {
     await auditAs(ctx, { action: 'ACCESS_DENIED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'DENIED', metadata: { attempted: action, reason: dec.reason } })
+    if (dec.reason === 'OWNER_APPROVAL_REQUIRED') {
+      const req = await autoRequestOwnerApproval(ctx, row, 'OPEN')
+      throw new ServiceError('ACCESS_DENIED', 'Dokumen ini wajib persetujuan Owner. Permintaan persetujuan sudah dikirim ke Owner.', { requestId: req.requestId, autoRequested: true })
+    }
     throw new ServiceError('ACCESS_DENIED', dec.requestable ? 'Akses ditolak. Ajukan permintaan akses untuk membuka dokumen ini.' : 'Akses ditolak.', {
       requestable: dec.requestable, reason: dec.reason,
     })

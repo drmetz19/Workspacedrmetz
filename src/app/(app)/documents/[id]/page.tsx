@@ -5,6 +5,7 @@ import { listDocumentPermissions } from '@/server/services/permissions'
 import { listDivisions } from '@/server/services/org'
 import { SecurityPanel } from '@/components/SecurityPanel'
 import { OpenPanel } from '@/components/OpenPanel'
+import { listMyRequests } from '@/server/services/access'
 import { guard } from '@/lib/page-guard'
 import { Flash } from '@/components/Flash'
 import { AccessDenied } from '@/components/AccessDenied'
@@ -20,6 +21,7 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
   if (!res.ok) return <AccessDenied message={res.message} />
   const d = res.data
   const history = await getDocumentHistory(user, id)
+  const myRequest = (await listMyRequests(user)).find((r) => r.documentId === id && (r.status === 'PENDING' || r.status === 'APPROVED' || r.status === 'REJECTED')) ?? null
   const manage = d.permissions.canManage
     ? { grants: await listDocumentPermissions(user, id), users: await listUserOptions(user), divisions: await listDivisions(user) }
     : null
@@ -57,7 +59,7 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
         </div>
       )}
 
-      <OpenPanel doc={d} />
+      <OpenPanel doc={d} myRequest={myRequest} />
 
       <div className="grid grid-2">
         <div className="card">

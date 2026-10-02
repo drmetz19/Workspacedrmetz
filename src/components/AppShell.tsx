@@ -57,6 +57,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
           <NavLink href="/" exact icon="dashboard">Beranda / Overview</NavLink>
           <NavLink href="/documents" icon="folder">Direktori Dokumen</NavLink>
           <NavLink href="/search" icon="manage_search">Pencarian</NavLink>
+          <NavLink href="/access" icon="verified_user" count={counts.pendingApprovals}>Persetujuan</NavLink>
           {(owner || user.roleId === 'GM' || !!counts.draftsToReview) && (
             <NavLink href="/documents/review" icon="rate_review" count={counts.draftsToReview}>Review Draft</NavLink>
           )}

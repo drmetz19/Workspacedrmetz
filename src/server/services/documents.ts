@@ -345,8 +345,13 @@ export async function updateDocumentMetadata(ctx: IdentityContext, documentId: u
   const { row, grants } = await loadVisibleDocumentWithGrants(ctx, documentId, 'DOCUMENT_UPDATED')
   const dec = decide(ctx, facts(row), 'EDIT_METADATA', grants)
   if (!dec.allowed) {
-    return deny(ctx, row.document_id, 'DOCUMENT_UPDATED',
-      dec.reason === 'OWNER_APPROVAL_REQUIRED' ? 'Dokumen ini wajib persetujuan Owner untuk diubah.' : undefined)
+    if (dec.reason === 'OWNER_APPROVAL_REQUIRED') {
+      await auditAs(ctx, { action: 'ACCESS_DENIED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'DENIED', metadata: { attempted: 'DOCUMENT_UPDATED', reason: dec.reason } })
+      const { autoRequestOwnerApproval } = await import('./access')
+      const req = await autoRequestOwnerApproval(ctx, row, 'EDIT_METADATA')
+      throw new ServiceError('ACCESS_DENIED', 'Dokumen ini wajib persetujuan Owner untuk diubah. Permintaan persetujuan sudah dikirim ke Owner.', { requestId: req.requestId, autoRequested: true })
+    }
+    return deny(ctx, row.document_id, 'DOCUMENT_UPDATED')
   }
   const data = parseInput(DocumentInput, input)
   await assertRefs(db(), data)

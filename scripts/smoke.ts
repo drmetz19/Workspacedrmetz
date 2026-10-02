@@ -14,6 +14,7 @@ const PHASES: Record<number, string> = {
   6: 'Koneksi Drive + scan',
   7: 'AI saran metadata',
   8: 'Buka L3–5 lewat CSSE',
+  9: 'Permintaan akses',
 }
 
 async function main() {

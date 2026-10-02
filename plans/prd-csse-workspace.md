@@ -151,6 +151,13 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Permission eksplisit per dokumen dapat menambah akses di atas default.
 - Keputusan akses **deterministik** — tidak pernah diputuskan oleh LLM.
 
+### Permintaan akses (approval MVP)
+- Hanya untuk dokumen aktif yang user **boleh tahu** tetapi belum boleh buka (L3–5) — atau GM pada dokumen wajib persetujuan Owner.
+- Approver: L3 → GM atau Owner; L4–5 & bertanda `OWNER_APPROVAL_REQUIRED` → Owner. Tidak ada yang bisa memutuskan permintaannya sendiri. Satu permintaan menunggu per dokumen per user per jenis aksi.
+- Disetujui → grant USER sementara (1/7/30 hari, `source = ACCESS_REQUEST`); ditolak wajib alasan; pemohon bisa membatalkan permintaan yang masih menunggu.
+- Scenario 3: GM yang membuka/mengubah dokumen wajib persetujuan Owner otomatis membuat permintaan (`auto_created`) ke Owner — aksi tidak dijalankan.
+- Akses berakhir tepat waktu oleh engine (grant punya `expires_at`); cron per jam menandai status `EXPIRED` dan mencabut grant. Notifikasi approver/pemohon lewat adapter email.
+
 ### Google Drive
 - Akses Drive lewat **akun service / domain-wide delegation** milik Google Workspace organisasi.
 - Folder **standar** (L1–2): file tetap di Drive biasa; CSSE hanya index + link.
@@ -237,6 +244,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 9 · Ditambah: pembatalan permintaan oleh pemohon, permintaan otomatis untuk aksi ubah metadata (bukan hanya buka), notifikasi email, cron per jam — alasan: Scenario 3 mencakup "aksi" apa pun pada dokumen wajib persetujuan Owner.
 - 2026-10-02 · Phase 8 · Proxy file memaksa unduh untuk tipe non-aman & menandai sumber hilang saat file tidak ditemukan — alasan: mencegah XSS dari file Drive dan menjaga status registry akurat.
 - 2026-10-02 · Phase 7 · Ditambah provider `mock` deterministik untuk dev/test dan mode `none` (AI nonaktif) — alasan: D1 (provider & kebijakan data) belum diputuskan; alur tetap teruji end-to-end tanpa mengirim data ke vendor.
 - 2026-10-02 · Phase 6 · Ditambah status `REJECTED`, tabel `document_suggestions` (saran terpisah dari field final), pemeriksaan siapa yang masih punya akses ke folder terbatas, aturan level saat konfirmasi draft — alasan: edge case scan ulang & mencegah dokumen sensitif tetap terbuka di Drive.
