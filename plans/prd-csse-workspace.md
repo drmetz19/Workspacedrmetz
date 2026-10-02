@@ -106,6 +106,15 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 55. As a user not allowed by CSSE, I want to be refused without receiving the Drive link, so that CSSE remains the gatekeeper of the directory.
 56. As an invited user, I want invitation, reset-password, and approval emails to come from projectcuan15@gmail.com, so that I recognise the sender and actually receive them.
 
+### K. Direktori & Tanya Dokumen (mockup Owner 2 Okt 2026)
+57. As a user, I want a "Direktori Dokumen Divisi" with division tabs showing how many documents I can see per division, so that I can browse by division quickly.
+58. As a user, I want to filter the directory by status (aktif, akan berakhir, kedaluwarsa, saya PIC, arsip), year, and keyword, with pagination, so that long lists stay manageable.
+59. As a user, I want each row to show division, PIC, validity in plain words ("Berakhir 21 hari lagi"), Drive link state, and the right action (Buka Berkas / Minta Akses / Perpanjang), so that I know what to do next.
+60. As a PIC/GM/Owner, I want "Perpanjang" to open the new-version form with the old document preselected, so that renewing a permit is one click.
+61. As a user, I want "Tanya Dokumen" to answer in a chat layout with a "Ditemukan dokumen resmi" card (nomor, masa berlaku & sisa, status perpanjangan, penanggung jawab, buka di Drive), so that I get the answer without opening the file.
+62. As a user, I want my chat history (only my own questions), a "Percakapan Baru" button, recommended questions, and a thumbs up/down on answers, so that I can reuse questions and tell the team when answers miss.
+63. As a user, I want the side panel to list the divisions the assistant reads from (only what I may see), so that I understand the answer's scope.
+
 ---
 
 ## Implementation Decisions
@@ -259,6 +268,8 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 16 · Halaman Tanya AI diganti layout chat sesuai mockup "Tanya Dokumen & Regulasi Klinik"; sitasi diperkaya (nomor/masa berlaku/PIC/boleh buka) dengan aturan penyembunyian yang sama; riwayat chat diambil dari audit milik user sendiri (tanpa tabel baru); umpan balik jawaban dicatat sebagai `AI_ANSWER_FEEDBACK`. Elemen mockup yang tidak didukung data (tanda tangan, "enkripsi AES-256", ukuran file) tidak ditiru — alasan: desain Owner; tetap jujur terhadap kemampuan sistem.
+- 2026-10-02 · Phase 15 · Halaman Dokumen menjadi "Direktori Dokumen Divisi" sesuai mockup: tab divisi + jumlah (scope izin), filter status/tahun/saring, paginasi 10/hal, kolom Drive & aksi (Buka Berkas / Minta Akses / Perpanjang). DTO dokumen menambah `hasFile`/`canOpen`/`openMode` (tanpa membocorkan tautan); pencarian menambah filter `year` & `offset`. Tombol "Tanda Tangan" di mockup tidak dibuat (e-sign di luar scope) — alasan: desain Owner.
 - 2026-10-02 · Phase 14 · D4 diputuskan: email produksi lewat Gmail SMTP dari projectcuan15@gmail.com (`EMAIL_PROVIDER=smtp`, App Password), salinan tetap di outbox, kegagalan kirim tidak menggagalkan alur — alasan: keputusan Owner; email utama klinik.
 - 2026-10-02 · Phase 13 · D2 diputuskan: mode tautan Drive — dokumen cukup tautan Drive (file/folder), izin file dari setelan berbagi Drive, tanpa akun service/scan; semua level dibuka via redirect CSSE yang diaudit (mengubah A4: L3–5 tidak lagi wajib proxy CSSE di mode ini) — alasan: keputusan Owner agar operasional lebih mudah.
 - 2026-10-02 · Go-live Supabase · Migrasi 0009–0010: RLS aktif di semua tabel public + policy baca eksplisit untuk role sesi user, fungsi CSSE tidak bisa dipanggil lewat REST RPC, search_path fungsi dikunci — alasan: temuan Supabase security advisor. Project Supabase memakai region ap-northeast-2 (Seoul), bukan Singapore (D3).

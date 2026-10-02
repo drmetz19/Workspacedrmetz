@@ -234,3 +234,31 @@ Adapter email `smtp` (default host Gmail, port 465) dengan pengirim `"Dr. Metz W
 - [x] Undangan dari Owner terkirim lewat SMTP terautentikasi ke email yang diundang
 - [x] Pengirim projectcuan15@gmail.com dengan nama "Dr. Metz Workspace", isi memuat tautan undangan
 - [x] Gagal kirim / SMTP_PASS kosong → alur tetap jalan, email tercatat di outbox
+
+---
+
+## Phase 15: Direktori Dokumen Divisi
+**User stories**: 57, 58, 59, 60
+
+### What to build
+Halaman `/documents` sesuai mockup: tab pil per divisi dengan jumlah dokumen yang boleh dilihat, filter status/tahun/saring, tabel (dokumen & nomor, divisi, PIC, masa berlaku/status, Google Drive, aksi), paginasi 10/hal, kartu Drive (mode tautan). "Perpanjang" → `/documents/new?supersedes={id}`. `?tab=` lama tetap berfungsi.
+
+### Acceptance criteria
+- [x] Tab divisi menampilkan jumlah sesuai izin (staf tidak melihat divisi lain yang L2)
+- [x] Filter status (akan berakhir/kedaluwarsa/saya PIC/arsip), tahun, dan saring bekerja; paginasi 10/hal
+- [x] Kolom masa berlaku dalam bahasa sehari-hari + kolom Drive (tertaut/belum/sumber hilang)
+- [x] Aksi: Buka Berkas (jalur CSSE), Minta Akses (nomor disembunyikan, tanpa tautan), Perpanjang → form versi baru terpilih
+
+---
+
+## Phase 16: Tanya Dokumen & Regulasi Klinik
+**User stories**: 61, 62, 63
+
+### What to build
+Halaman `/search/ask` sesuai mockup: layout chat, chip rekomendasi, kartu "Ditemukan dokumen resmi" (nomor, masa berlaku & sisa, status perpanjangan, PIC, file + buka di Drive / minta akses), sumber lain, umpan balik 👍/👎 (`POST /api/ask/feedback`), Riwayat Chat (dari audit milik sendiri), Percakapan Baru, panel divisi sumber data, kartu keamanan, tips, composer bawah.
+
+### Acceptance criteria
+- [x] Pertanyaan tampil sebagai gelembung user; jawaban berisi kartu dokumen resmi dengan ringkasan inti
+- [x] Tombol buka memakai jalur CSSE (diaudit); dokumen yang belum boleh dibuka → nomor disembunyikan + Minta akses
+- [x] Riwayat chat hanya pertanyaan milik sendiri; Percakapan Baru mengosongkan percakapan
+- [x] Umpan balik tercatat di audit; panel divisi sumber data sesuai izin
