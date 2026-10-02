@@ -16,7 +16,7 @@ export function OpenPanel({ doc, myRequest }: { doc: DocumentDetail; myRequest?:
           <div className="small muted">Dapat dibuka langsung di Google Drive.</div>
         </div>
         <span className="spacer" />
-        <a className="btn btn-primary" href={doc.externalUrl} target="_blank" rel="noreferrer">Buka di Google Drive ↗</a>
+        <a className="btn btn-primary" href={`/api/documents/${doc.documentId}/open-drive`} target="_blank" rel="noreferrer">Buka di Google Drive ↗</a>
       </div>
     ) : (
       <div className="card small muted">Belum ada tautan Drive untuk dokumen ini.</div>

@@ -201,8 +201,8 @@ Dashboard per peran. Owner/GM: Menunggu Approval Saya, Akan Kedaluwarsa (≤90 h
 Halaman audit (Owner) dengan filter user, dokumen, aksi, tanggal. Audit append-only: tidak bisa diubah/dihapus via UI, API, maupun sesi DB user. Lengkapi event yang belum tercatat. Degradasi: Drive tidak bisa dijangkau → pencarian metadata tetap jalan, buka file menampilkan error jelas; otorisasi Drive kedaluwarsa/dicabut → peringatan di dashboard Owner.
 
 ### Acceptance criteria
-- [ ] Filter audit berdasarkan user/dokumen/aksi/tanggal mengembalikan event yang benar
-- [ ] Upaya update/delete audit_events oleh user mana pun ditolak (UI, API, dan query DB dengan sesi user)
-- [ ] Checklist event PRD story 46 seluruhnya muncul di log setelah smoke test end-to-end
-- [ ] Drive adapter dipaksa error → pencarian tetap jalan, buka file menampilkan pesan jelas
-- [ ] Kredensial Drive dicabut → kartu peringatan muncul di dashboard Owner
+- [x] Filter audit berdasarkan user/dokumen/aksi/tanggal mengembalikan event yang benar
+- [x] Upaya update/delete audit_events oleh user mana pun ditolak (UI, API, dan query DB dengan sesi user)
+- [x] Checklist event PRD story 46 seluruhnya muncul di log setelah smoke test end-to-end
+- [x] Drive adapter dipaksa error → pencarian tetap jalan, buka file menampilkan pesan jelas
+- [x] Kredensial Drive dicabut → kartu peringatan muncul di dashboard Owner

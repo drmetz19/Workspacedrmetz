@@ -129,7 +129,10 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - **AI suggestion** disimpan terpisah dari metadata terkonfirmasi (field saran vs field final), supaya jelas mana yang sudah diverifikasi manusia.
 - **Permission** (resource-level): principal USER / ROLE / DIVISION; tipe VIEW, OPEN, DOWNLOAD, EDIT_METADATA, MANAGE_PERMISSION, APPROVE; `expires_at` untuk akses sementara.
 - **Access Request**: requester, dokumen, alasan, approver yang ditentukan, status (PENDING/APPROVED/REJECTED/EXPIRED), durasi, alasan penolakan.
-- **Audit Event** append-only: actor, email akun, action, resource, timestamp, result, source (UI/AI/system), metadata.
+- **Audit Event** append-only: actor, email akun, action, resource, timestamp, result, source (UI/API/AI/SYSTEM), metadata.
+  - Ditegakkan di DB: trigger menolak UPDATE/DELETE/TRUNCATE untuk semua koneksi; role sesi user hanya boleh INSERT atas nama dirinya & SELECT event miliknya (Owner: semua). Tidak ada endpoint ubah/hapus.
+  - Halaman audit (Owner): filter user/aksi/hasil/dokumen/email/tanggal WIB, paginasi, ekspor CSV.
+  - Membuka dokumen L1–2 lewat tombol CSSE juga tercatat (`DOCUMENT_OPENED` via `DRIVE_LINK`), lalu diarahkan ke Drive.
 - **Drive Source**: folder/Shared Drive yang terhubung + tipe (standar / terbatas) + status sinkronisasi terakhir.
 
 ### Kebijakan level keamanan (default pilot)
@@ -248,6 +251,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 12 · Ditambah ekspor CSV audit, pencatatan pembukaan L1–2 lewat redirect CSSE, blokir TRUNCATE audit (bypass hanya via setting sesi untuk pemeliharaan/test) — alasan: checklist story 46 "dokumen dibuka" juga berlaku untuk L1–2; kebutuhan rekap untuk akreditasi.
 - 2026-10-02 · Phase 11 · Kartu "Akan kedaluwarsa" juga memuat dokumen yang sudah lewat (ditandai kritis); divisi punya "penanggung jawab" (manager) yang diatur Owner — alasan: mengikuti mockup Stitch & dokumen lewat masa berlaku justru paling mendesak.
 - 2026-10-02 · Phase 10 · Pertanyaan tanpa kandidat dijawab deterministik tanpa memanggil AI; sitasi dibatasi ke daftar kandidat — alasan: hemat biaya & mencegah AI menyebut dokumen di luar izin.
 - 2026-10-02 · Phase 9 · Ditambah: pembatalan permintaan oleh pemohon, permintaan otomatis untuk aksi ubah metadata (bukan hanya buka), notifikasi email, cron per jam — alasan: Scenario 3 mencakup "aksi" apa pun pada dokumen wajib persetujuan Owner.

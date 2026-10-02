@@ -57,3 +57,15 @@ export async function getAuthorizedDocument(ctx: IdentityContext, documentId: un
   const inline = !opts.download && INLINE_SAFE.has(file.mimeType)
   return { ...file, disposition: inline ? 'inline' : 'attachment' }
 }
+
+/** Membuka dokumen L1–2 di Google Drive lewat CSSE agar tercatat (DOCUMENT_OPENED via DRIVE_LINK). */
+export async function openDriveLink(ctx: IdentityContext, documentId: unknown): Promise<string> {
+  const { row, grants } = await loadVisibleDocumentWithGrants(ctx, documentId, 'DOCUMENT_OPENED')
+  const dec = decide(ctx, facts(row), 'OPEN', grants)
+  if (!dec.allowed || row.security_level >= 3 || !row.external_url) {
+    await auditAs(ctx, { action: 'ACCESS_DENIED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'DENIED', metadata: { attempted: 'DOCUMENT_OPENED', via: 'DRIVE_LINK' } })
+    throw new ServiceError('ACCESS_DENIED', row.security_level >= 3 ? 'Dokumen terbatas hanya dapat dibuka lewat CSSE.' : 'Akses ditolak.')
+  }
+  await auditAs(ctx, { action: 'DOCUMENT_OPENED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'SUCCESS', metadata: { securityLevel: row.security_level, via: 'DRIVE_LINK' } })
+  return row.external_url
+}

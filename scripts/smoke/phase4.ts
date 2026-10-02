@@ -58,7 +58,9 @@ export default async function phase4(t: Smoke) {
   }
   t.check('Dokumen L3–5 tidak pernah mengekspos tautan Drive (daftar & detail)', !leaked)
   const l2 = await same.get(`/documents/${ids[2]}`)
-  t.check('Dokumen L2 menampilkan tombol "Buka di Google Drive" untuk divisinya', l2.text.includes('Buka di Google Drive') && l2.text.includes('SMOKEFILE2'))
+  const viaCsse = await same.get(`/api/documents/${ids[2]}/open-drive`)
+  t.check('Dokumen L2 menampilkan tombol "Buka di Google Drive" (tercatat lewat CSSE) untuk divisinya',
+    l2.text.includes('Buka di Google Drive') && viaCsse.status === 303 && viaCsse.location!.includes('SMOKEFILE2'))
   const l3same = await same.get(`/documents/${ids[3]}`)
   t.check('Staf divisi melihat L3 tanpa ringkasan & dengan opsi ajukan akses', l3same.text.includes('Ajukan permintaan akses') && !l3same.text.includes('Isi ringkasan L3'))
   const l3pic = await pic.get(`/documents/${ids[3]}`)

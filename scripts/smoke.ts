@@ -17,6 +17,7 @@ const PHASES: Record<number, string> = {
   9: 'Permintaan akses',
   10: 'Ask AI',
   11: 'Command Center',
+  12: 'Audit + error state',
 }
 
 async function main() {

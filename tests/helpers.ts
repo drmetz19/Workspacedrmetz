@@ -9,7 +9,12 @@ export async function resetDb() {
   const sql = db()
   const tables = await sql<{ tablename: string }[]>`select tablename from pg_tables where schemaname = 'public'`
   const names = tables.map((t) => t.tablename).filter((t) => !KEEP.has(t))
-  if (names.length) await sql.unsafe(`truncate ${names.map((n) => `"${n}"`).join(', ')} restart identity cascade`)
+  if (names.length) {
+    await sql.begin(async (tx) => {
+      await tx`select set_config('csse.allow_audit_truncate', 'on', true)`
+      await tx.unsafe(`truncate ${names.map((n) => `"${n}"`).join(', ')} restart identity cascade`)
+    })
+  }
   await sql`insert into divisions (division_name) values ('Legal/Perizinan')`
   await reseedExtra()
 }

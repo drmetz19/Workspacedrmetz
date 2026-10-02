@@ -82,6 +82,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
         )}
         </Suspense>
         <div className="sidebar-foot">
+          {owner && <NavLink href="/audit" icon="policy">Compliance Audit</NavLink>}
           <form action="/api/auth/logout" method="post">
             <button className="btn btn-sm btn-block" type="submit"><Icon name="logout" /> Keluar</button>
           </form>
