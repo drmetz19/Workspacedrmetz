@@ -7,6 +7,7 @@ import { resetSmokeDb, Smoke, startServer, stopServer, sql } from './smoke/lib'
  */
 const PHASES: Record<number, string> = {
   1: 'Login undangan',
+  2: 'Admin organisasi',
 }
 
 async function main() {

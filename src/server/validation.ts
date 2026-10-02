@@ -24,15 +24,18 @@ export function requireUuid(id: unknown, what = 'id'): string {
 
 /** String kosong → null; dipakai untuk field opsional dari form HTML. */
 export const optionalText = z
-  .union([z.string(), z.null(), z.undefined()])
+  .string()
+  .nullish()
   .transform((v) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null))
 
 export const optionalUuid = z
-  .union([z.string(), z.null(), z.undefined()])
+  .string()
+  .nullish()
   .transform((v) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null))
   .refine((v) => v === null || UUID_RE.test(v), 'harus berupa ID yang valid')
 
 export const optionalDate = z
-  .union([z.string(), z.null(), z.undefined()])
+  .string()
+  .nullish()
   .transform((v) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null))
   .refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), 'format tanggal YYYY-MM-DD')

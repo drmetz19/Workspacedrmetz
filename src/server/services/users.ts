@@ -3,18 +3,12 @@ import { db } from '../db'
 import { config } from '../config'
 import { auditAs } from '../audit'
 import { ServiceError } from '../errors'
-import { isOwner, type IdentityContext } from '../context'
+import type { IdentityContext } from '../context'
+import { requireOwner } from '../guards'
 import { optionalUuid, parseInput, requireUuid } from '../validation'
 import { sendEmail } from '../integrations/email'
 import { issueAuthToken } from './auth'
 import { findUserById, normalizeEmail, toUserDto, type UserDto, type UserRow } from './users-repo'
-
-/** Guard: aksi khusus Owner. Penolakan diaudit. */
-export async function requireOwner(ctx: IdentityContext, action: string, resourceType?: string, resourceId?: string | null) {
-  if (isOwner(ctx)) return
-  await auditAs(ctx, { action, resourceType, resourceId, result: 'DENIED', metadata: { reason: 'OWNER_ONLY' } })
-  throw new ServiceError('ACCESS_DENIED', 'Akses ditolak. Hanya Owner yang dapat melakukan ini.')
-}
 
 const InviteInput = z.object({
   email: z.string().trim().email('email tidak valid'),
@@ -74,4 +68,51 @@ export async function listUsers(ctx: IdentityContext): Promise<(UserDto & { divi
     join roles r on r.role_id = u.role_id
     order by r.role_level desc, u.name`
   return rows.map((r) => ({ ...toUserDto(r), divisionName: r.division_name, roleName: r.role_name }))
+}
+
+const UpdateUserInput = z.object({
+  name: z.string().trim().min(1, 'wajib diisi'),
+  roleId: z.enum(['OWNER', 'GM', 'DIVISION_USER']),
+  divisionId: optionalUuid,
+})
+
+/** Owner mengubah nama, role, dan divisi user. Berlaku langsung karena konteks dibaca ulang tiap request. */
+export async function updateUser(ctx: IdentityContext, userId: unknown, input: unknown): Promise<UserDto> {
+  await requireOwner(ctx, 'USER_UPDATED', 'USER', typeof userId === 'string' ? userId : null)
+  const id = requireUuid(userId, 'User')
+  const data = parseInput(UpdateUserInput, input)
+  const before = await findUserById(db(), id)
+  if (!before) throw new ServiceError('NOT_FOUND', 'User tidak ditemukan.')
+  if (id === ctx.userId && data.roleId !== 'OWNER') throw new ServiceError('VALIDATION', 'Anda tidak dapat menurunkan role akun sendiri.')
+  if (data.divisionId) {
+    const [d] = await db()`select 1 from divisions where division_id = ${data.divisionId}`
+    if (!d) throw new ServiceError('VALIDATION', 'divisionId: divisi tidak ditemukan')
+  }
+  const row = await db().begin(async (tx) => {
+    const [r] = await tx<UserRow[]>`
+      update users set name = ${data.name}, role_id = ${data.roleId}, division_id = ${data.divisionId}, updated_at = now()
+      where user_id = ${id} returning *`
+    await auditAs(ctx, {
+      action: 'USER_UPDATED', resourceType: 'USER', resourceId: id, result: 'SUCCESS',
+      metadata: {
+        before: { name: before.name, roleId: before.role_id, divisionId: before.division_id },
+        after: { name: data.name, roleId: data.roleId, divisionId: data.divisionId },
+      },
+    }, tx)
+    return r
+  })
+  return toUserDto(row)
+}
+
+export async function reactivateUser(ctx: IdentityContext, userId: unknown) {
+  await requireOwner(ctx, 'USER_REACTIVATED', 'USER', typeof userId === 'string' ? userId : null)
+  const id = requireUuid(userId, 'User')
+  const target = await findUserById(db(), id)
+  if (!target) throw new ServiceError('NOT_FOUND', 'User tidak ditemukan.')
+  if (target.status !== 'DEACTIVATED') return
+  await db().begin(async (tx) => {
+    await tx`update users set status = case when last_login_at is null then 'INVITED' else 'ACTIVE' end,
+               failed_login_count = 0, locked_until = null, updated_at = now() where user_id = ${id}`
+    await auditAs(ctx, { action: 'USER_REACTIVATED', resourceType: 'USER', resourceId: id, result: 'SUCCESS' }, tx)
+  })
 }

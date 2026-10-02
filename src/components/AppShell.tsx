@@ -19,6 +19,8 @@ export function AppShell({ user, children }: { user: IdentityContext; children: 
           <nav className="nav-group" aria-label="Administrasi">
             <span className="nav-label">Administrasi</span>
             <NavLink href="/admin/users">User &amp; Undangan</NavLink>
+            <NavLink href="/admin/divisions">Divisi</NavLink>
+            <NavLink href="/admin/categories">Kategori</NavLink>
           </nav>
         )}
         <div className="sidebar-foot">

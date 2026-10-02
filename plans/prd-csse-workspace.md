@@ -218,6 +218,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 2 · Ditambah: aktifkan kembali user nonaktif, Owner tidak bisa menurunkan role sendiri, divisi/kategori bisa dinonaktifkan (tidak dihapus) — alasan: edge case administrasi yang muncul saat implementasi; menjaga riwayat dan mencegah Owner terkunci dari admin.
 - 2026-10-02 · Phase 1 · Undangan disimpan sebagai user `INVITED`, sesi milik CSSE, identity & email lewat adapter (local/outbox untuk dev) — alasan: Supabase belum tersedia dan login harus bisa diganti provider tanpa mengubah logika undangan/lockout/audit. Ditambah D4 (penyedia email).
 - 2026-10-02 · Grilling · Scope MVP dipersempit dari 18 must-have (v0.2) menjadi pilot Legal/Perizinan; correspondence, workflow engine, Gmail, MCP server, vector search dipindah ke fase 2 — alasan: memvalidasi fondasi (registry, permission, audit, search) dengan user nyata sebelum membangun lapisan berikutnya.
 - 2026-10-02 · Plan · Plan disusun 12 fase; fitur versi (story 23) digabung ke fase Registry — alasan: slice terlalu kecil untuk berdiri sendiri.

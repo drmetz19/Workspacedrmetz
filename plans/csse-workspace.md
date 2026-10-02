@@ -47,10 +47,10 @@ Owner pertama di-bootstrap. Owner mengundang user (email, role, divisi). User ya
 Halaman admin untuk Owner: CRUD divisi, CRUD kategori (seed: Izin Operasional, SIP, STR, Kontrak, MoU, Sewa, Sertifikat, Lainnya), ubah role/divisi user, aktif/nonaktifkan user. Semua perubahan diaudit. Non-Owner tidak bisa mengakses halaman admin.
 
 ### Acceptance criteria
-- [ ] Owner dapat membuat/mengubah divisi dan kategori; kategori seed tersedia
-- [ ] Owner dapat mengubah role & divisi user; perubahan langsung berlaku pada sesi berikutnya
-- [ ] Division User/GM yang membuka `/admin/*` mendapat akses ditolak (dan diaudit)
-- [ ] Setiap perubahan admin menghasilkan audit event
+- [x] Owner dapat membuat/mengubah divisi dan kategori; kategori seed tersedia
+- [x] Owner dapat mengubah role & divisi user; perubahan langsung berlaku pada sesi berikutnya
+- [x] Division User/GM yang membuka `/admin/*` mendapat akses ditolak (dan diaudit)
+- [x] Setiap perubahan admin menghasilkan audit event
 
 ---
 

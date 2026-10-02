@@ -1,9 +1,7 @@
 import { requireUser, sp, type SearchParams } from '@/lib/session'
 import { listUsers } from '@/server/services/users'
 import { listDivisions } from '@/server/services/org'
-import { guard } from '@/lib/page-guard'
 import { Flash } from '@/components/Flash'
-import { AccessDenied } from '@/components/AccessDenied'
 import { fmtDateTime, ROLE_LABEL, USER_STATUS_LABEL } from '@/lib/labels'
 
 const STATUS_BADGE: Record<string, string> = { ACTIVE: 'badge-ok', INVITED: 'badge-warn', DEACTIVATED: 'badge-muted' }
@@ -11,8 +9,7 @@ const STATUS_BADGE: Record<string, string> = { ACTIVE: 'badge-ok', INVITED: 'bad
 export default async function UsersPage({ searchParams }: { searchParams: SearchParams }) {
   const user = await requireUser()
   const { get } = await sp(searchParams)
-  const users = await guard(() => listUsers(user))
-  if (!users.ok) return <AccessDenied message={users.message} />
+  const users = { data: await listUsers(user) }
   const divisions = await listDivisions(user)
 
   return (
@@ -82,11 +79,34 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                   <td><span className={`badge ${STATUS_BADGE[u.status]}`}>{USER_STATUS_LABEL[u.status]}</span></td>
                   <td className="small">{fmtDateTime(u.lastLoginAt)}</td>
                   <td>
-                    {u.status !== 'DEACTIVATED' && u.userId !== user.userId && (
-                      <form action={`/api/admin/users/${u.userId}/deactivate`} method="post" className="inline">
-                        <button className="btn btn-danger btn-sm" type="submit">Nonaktifkan</button>
+                    <details>
+                      <summary className="small" style={{ cursor: 'pointer' }}>Ubah</summary>
+                      <form action={`/api/admin/users/${u.userId}`} method="post" className="stack" style={{ minWidth: 220, marginTop: 8 }}>
+                        <input name="name" defaultValue={u.name} required aria-label="Nama" />
+                        <select name="roleId" defaultValue={u.roleId} aria-label="Role" disabled={u.userId === user.userId}>
+                          <option value="DIVISION_USER">Division User</option>
+                          <option value="GM">General Manager</option>
+                          <option value="OWNER">Owner</option>
+                        </select>
+                        {u.userId === user.userId && <input type="hidden" name="roleId" value="OWNER" />}
+                        <select name="divisionId" defaultValue={u.divisionId ?? ''} aria-label="Divisi">
+                          <option value="">— Tanpa divisi —</option>
+                          {divisions.map((d) => <option key={d.divisionId} value={d.divisionId}>{d.divisionName}</option>)}
+                        </select>
+                        <button className="btn btn-sm" type="submit">Simpan</button>
                       </form>
-                    )}
+                      {u.userId !== user.userId && (
+                        u.status === 'DEACTIVATED' ? (
+                          <form action={`/api/admin/users/${u.userId}/reactivate`} method="post" style={{ marginTop: 6 }}>
+                            <button className="btn btn-sm" type="submit">Aktifkan kembali</button>
+                          </form>
+                        ) : (
+                          <form action={`/api/admin/users/${u.userId}/deactivate`} method="post" style={{ marginTop: 6 }}>
+                            <button className="btn btn-danger btn-sm" type="submit">Nonaktifkan</button>
+                          </form>
+                        )
+                      )}
+                    </details>
                   </td>
                 </tr>
               ))}
