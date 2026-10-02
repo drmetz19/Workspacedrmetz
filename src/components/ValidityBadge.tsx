@@ -3,7 +3,7 @@ import { daysUntil } from './Badges'
 import { fmtDate } from '@/lib/labels'
 
 /** Masa berlaku & status dalam bahasa sehari-hari (kolom "Masa berlaku / status"). */
-export function ValidityBadge({ doc }: { doc: Pick<DocumentDto, 'status' | 'expiryDate'> }) {
+export function ValidityBadge({ doc }: { doc: { status: string; expiryDate: Pick<DocumentDto, 'expiryDate'>['expiryDate'] } }) {
   if (doc.status === 'SUPERSEDED') return <span className="badge badge-muted">Diganti versi baru</span>
   if (doc.status === 'ARCHIVED') return <span className="badge badge-muted">Arsip</span>
   const d = daysUntil(doc.expiryDate)

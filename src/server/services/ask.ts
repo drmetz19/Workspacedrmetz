@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { withUserScope } from '../db'
+import { db, withUserScope } from '../db'
 import { auditAs } from '../audit'
 import { ServiceError } from '../errors'
 import type { IdentityContext } from '../context'
@@ -35,6 +35,15 @@ export interface AskCitation {
   securityLevel: number
   version: number
   expiryDate: string | null
+  /** Detail untuk kartu "Ditemukan dokumen resmi" — sudah diamankan (nomor null bila belum boleh membuka). */
+  documentNumber: string | null
+  effectiveDate: string | null
+  categoryName: string | null
+  divisionName: string | null
+  picName: string | null
+  canOpen: boolean
+  hasFile: boolean
+  openMode: 'DRIVE' | 'CSSE'
 }
 
 export interface AskResult {
@@ -110,11 +119,54 @@ export async function askDocuments(ctx: IdentityContext, input: unknown): Promis
   }
   const citations: AskCitation[] = out.citations.map((ref) => {
     const d = byRef.get(ref)!
-    return { ref, documentId: d.documentId, documentName: d.documentName, status: d.status, securityLevel: d.securityLevel, version: d.version, expiryDate: d.expiryDate }
+    return {
+      ref, documentId: d.documentId, documentName: d.documentName, status: d.status, securityLevel: d.securityLevel, version: d.version,
+      expiryDate: d.expiryDate, documentNumber: d.documentNumber, effectiveDate: d.effectiveDate, categoryName: d.categoryName,
+      divisionName: d.divisionName, picName: d.picName, canOpen: d.canOpen, hasFile: d.hasFile, openMode: d.openMode,
+    }
   })
   await auditAs(ctx, {
     action: 'AI_DOCUMENT_QUERIED', resourceType: 'AI', result: 'SUCCESS',
     metadata: { question, contextSize: docs.length, citedDocumentIds: citations.map((c) => c.documentId), found: out.found, provider: out.provider },
   })
   return { answer: out.answer, found: out.found, citations, contextSize: docs.length, provider: out.provider, permissionScopeApplied: true }
+}
+
+// ── Riwayat chat & umpan balik (dari audit milik user sendiri; tanpa tabel baru) ──
+export interface AskHistoryItem {
+  question: string
+  found: boolean
+  askedAt: Date
+}
+
+/** Pertanyaan Tanya AI milik user ini, terbaru di atas (duplikat berurutan digabung). */
+export async function listAskHistory(ctx: IdentityContext, limit = 20): Promise<AskHistoryItem[]> {
+  const rows = await db()<{ question: string | null; found: boolean | null; occurred_at: Date }[]>`
+    select metadata->>'question' as question, (metadata->>'found')::boolean as found, occurred_at
+    from audit_events
+    where actor_user_id = ${ctx.userId} and action = 'AI_DOCUMENT_QUERIED' and metadata ? 'question'
+    order by occurred_at desc, event_id desc
+    limit ${limit * 3}`
+  const out: AskHistoryItem[] = []
+  const seen = new Set<string>()
+  for (const r of rows) {
+    const q = (r.question ?? '').trim()
+    if (!q || seen.has(q.toLowerCase())) continue
+    seen.add(q.toLowerCase())
+    out.push({ question: q, found: !!r.found, askedAt: r.occurred_at })
+    if (out.length >= limit) break
+  }
+  return out
+}
+
+const FeedbackInput = z.object({
+  question: z.string().trim().min(1, 'pertanyaan wajib').max(500),
+  helpful: z.enum(['yes', 'no']),
+})
+
+/** "Apakah ringkasan ini membantu?" → dicatat sebagai AI_ANSWER_FEEDBACK. */
+export async function recordAskFeedback(ctx: IdentityContext, input: unknown) {
+  const f = parseInput(FeedbackInput, input)
+  await auditAs(ctx, { action: 'AI_ANSWER_FEEDBACK', resourceType: 'AI', result: 'SUCCESS', metadata: { question: f.question, helpful: f.helpful === 'yes' } })
+  return { recorded: true, helpful: f.helpful === 'yes' }
 }

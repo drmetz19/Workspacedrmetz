@@ -21,6 +21,7 @@ const PHASES: Record<number, string> = {
   13: 'Drive mode tautan',
   14: 'Email Gmail SMTP',
   15: 'Direktori Dokumen Divisi',
+  16: 'Tanya Dokumen (chat)',
 }
 
 async function main() {

@@ -13,11 +13,11 @@ async function main() {
     await page.goto(`${BASE}/api/auth/google/start`)
     await page.fill('#dev_email', email)
     await page.click('button[type=submit]')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load'); await page.waitForTimeout(400)
   }
   for (const p of paths) {
     await page.goto(BASE + p)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load'); await page.waitForTimeout(400)
     const file = `.smoke/${p.replace(/[^a-z0-9]+/gi, '_') || 'root'}.png`
     await page.screenshot({ path: file, fullPage: true })
     console.log('saved', file)
