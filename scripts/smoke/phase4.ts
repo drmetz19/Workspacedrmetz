@@ -95,5 +95,6 @@ export default async function phase4(t: Smoke) {
   await owner.post(`/api/documents/${ids[3]}/owner-approval`, { required: 'true' })
   const gmEdit = await gm.postJson(`/api/documents/${ids[3]}`, { documentName: 'Diubah GM' })
   const gmPage = await gm.get(`/documents/${ids[3]}`)
-  t.check('Dokumen wajib persetujuan Owner: GM tidak bisa mengubah & tidak bisa membuka', gmEdit.status === 403 && gmPage.text.includes('wajib persetujuan Owner'))
+  t.check('Dokumen wajib persetujuan Owner: GM tidak bisa mengubah & tidak bisa membuka (permintaan ke Owner menunggu)',
+    gmEdit.status === 403 && !gmPage.text.includes('Buka lewat CSSE') && (gmPage.text.includes('wajib persetujuan Owner') || gmPage.text.includes('Menunggu keputusan')))
 }
