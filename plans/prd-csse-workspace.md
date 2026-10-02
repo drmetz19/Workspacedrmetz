@@ -186,7 +186,8 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Elemen mockup di luar scope MVP tidak dibuat tiruan: tanda tangan elektronik, "audit log kripto / SHA-256", approval kontrak/surat (hanya permintaan akses L3–5), angka dummy.
 
 ### Command Center & navigasi MVP
-- Command Center (dashboard per peran), Dokumen (Semua, Milik Saya, Divisi, Draft Review, Terbatas), Pencarian (Filter, Ask AI), Akses (Permintaan Saya, Menunggu Saya), Aktivitas/Audit (Owner), Administrasi (User & undangan, Divisi, Kategori, Sumber Drive).
+- Command Center (dashboard per peran, layout mengikuti mockup Stitch: 3 kartu ringkasan, kartu per divisi dengan penanggung jawab divisi, tabel "Perlu Perhatian Segera" (permintaan akses + kedaluwarsa ≤90 hari termasuk yang sudah lewat), aktivitas terbaru & aktivitas terbatas L3–5, bar Tanya AI). Semua angka dihitung dalam scope izin user.
+- Navigasi: Dokumen (Semua, Milik Saya, Divisi, Draft Review, Terbatas), Pencarian (Filter, Ask AI), Akses (Permintaan Saya, Menunggu Saya), Aktivitas/Audit (Owner), Administrasi (User & undangan, Divisi, Kategori, Sumber Drive).
 
 ---
 
@@ -247,6 +248,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 11 · Kartu "Akan kedaluwarsa" juga memuat dokumen yang sudah lewat (ditandai kritis); divisi punya "penanggung jawab" (manager) yang diatur Owner — alasan: mengikuti mockup Stitch & dokumen lewat masa berlaku justru paling mendesak.
 - 2026-10-02 · Phase 10 · Pertanyaan tanpa kandidat dijawab deterministik tanpa memanggil AI; sitasi dibatasi ke daftar kandidat — alasan: hemat biaya & mencegah AI menyebut dokumen di luar izin.
 - 2026-10-02 · Phase 9 · Ditambah: pembatalan permintaan oleh pemohon, permintaan otomatis untuk aksi ubah metadata (bukan hanya buka), notifikasi email, cron per jam — alasan: Scenario 3 mencakup "aksi" apa pun pada dokumen wajib persetujuan Owner.
 - 2026-10-02 · Phase 8 · Proxy file memaksa unduh untuk tipe non-aman & menandai sumber hilang saat file tidak ditemukan — alasan: mencegah XSS dari file Drive dan menjaga status registry akurat.

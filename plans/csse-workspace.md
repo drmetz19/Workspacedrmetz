@@ -187,10 +187,10 @@ Chat pencarian bahasa natural. Alur: intent → identity → permission scope �
 Dashboard per peran. Owner/GM: Menunggu Approval Saya, Akan Kedaluwarsa (≤90 hari), Draft Perlu Review, Aktivitas Terbaru, Aktivitas Terbatas (akses L3–5). Division User: Permintaan Akses Saya, Dokumen Saya (PIC) yang akan kedaluwarsa, Draft yang ditugaskan ke saya. Semua kartu menghormati permission.
 
 ### Acceptance criteria
-- [ ] Owner melihat kelima kartu dengan angka yang cocok dengan data
-- [ ] Dokumen dengan expiry 60 hari muncul di "Akan Kedaluwarsa"; expiry 120 hari tidak
-- [ ] Division User hanya melihat kartu dan item miliknya / dalam scope-nya
-- [ ] Klik item kartu membuka halaman terkait
+- [x] Owner melihat kelima kartu dengan angka yang cocok dengan data
+- [x] Dokumen dengan expiry 60 hari muncul di "Akan Kedaluwarsa"; expiry 120 hari tidak
+- [x] Division User hanya melihat kartu dan item miliknya / dalam scope-nya
+- [x] Klik item kartu membuka halaman terkait
 
 ---
 

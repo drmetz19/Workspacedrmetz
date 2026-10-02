@@ -16,6 +16,7 @@ const PHASES: Record<number, string> = {
   8: 'Buka L3–5 lewat CSSE',
   9: 'Permintaan akses',
   10: 'Ask AI',
+  11: 'Command Center',
 }
 
 async function main() {

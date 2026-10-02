@@ -1,11 +1,12 @@
 import { requireUser, sp, type SearchParams } from '@/lib/session'
 import { listDivisions } from '@/server/services/org'
+import { listUserOptions } from '@/server/services/documents'
 import { Flash } from '@/components/Flash'
 
 export default async function DivisionsPage({ searchParams }: { searchParams: SearchParams }) {
   const user = await requireUser()
   const { get } = await sp(searchParams)
-  const divisions = await listDivisions(user, { includeInactive: true })
+  const [divisions, users] = await Promise.all([listDivisions(user, { includeInactive: true }), listUserOptions(user)])
   return (
     <>
       <Flash msg={get('msg')} err={get('err')} />
@@ -25,7 +26,7 @@ export default async function DivisionsPage({ searchParams }: { searchParams: Se
       <div className="card">
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Nama</th><th>User aktif</th><th>Status</th><th>Ubah</th></tr></thead>
+            <thead><tr><th>Nama</th><th>User aktif</th><th>Status</th><th>Ubah (nama · penanggung jawab · status)</th></tr></thead>
             <tbody>
               {divisions.map((d) => (
                 <tr key={d.divisionId}>
@@ -35,6 +36,10 @@ export default async function DivisionsPage({ searchParams }: { searchParams: Se
                   <td>
                     <form action={`/api/admin/divisions/${d.divisionId}`} method="post" className="row">
                       <input name="divisionName" defaultValue={d.divisionName} required style={{ maxWidth: 240 }} aria-label="Nama divisi" />
+                      <select name="managerUserId" defaultValue={d.managerUserId ?? ''} style={{ maxWidth: 200 }} aria-label="Penanggung jawab">
+                        <option value="">— Penanggung jawab —</option>
+                        {users.map((u) => <option key={u.user_id} value={u.user_id}>{u.name}</option>)}
+                      </select>
                       <select name="status" defaultValue={d.status} style={{ maxWidth: 130 }} aria-label="Status">
                         <option value="ACTIVE">Aktif</option>
                         <option value="INACTIVE">Nonaktif</option>
