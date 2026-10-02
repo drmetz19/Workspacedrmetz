@@ -1,12 +1,13 @@
 import { z } from 'zod'
-import { db, type Sql, type Tx } from '../db'
+import { db, withUserScope, type Sql, type Tx } from '../db'
 import { auditAs } from '../audit'
 import { ServiceError } from '../errors'
 import type { IdentityContext } from '../context'
 import { optionalDate, optionalText, optionalUuid, parseInput, requireUuid } from '../validation'
 import { parseDriveFileId } from '../integrations/drive/url'
-import { canArchive, canCreateIn, canEditMetadata, canView, type DocFacts } from '../permissions/engine'
+import { approverFor, canCreateIn, canView, decide, maxLevelOnCreate, openMode, type DocFacts, type Grant } from '../permissions/engine'
 import { visibleDocumentsWhere } from '../permissions/sql'
+import { loadGrants, loadGrantsFor } from '../permissions/grants'
 
 // ── Tipe ────────────────────────────────────────────────────────────────
 export type DocumentStatus = 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'ARCHIVED'
@@ -81,10 +82,23 @@ export interface DocumentRef {
   status: DocumentStatus
 }
 
+export interface DocumentPermissions {
+  canOpen: boolean
+  canEdit: boolean
+  canArchive: boolean
+  canManage: boolean
+  /** DRIVE = tautan langsung (L1–2), CSSE = hanya lewat CSSE (L3–5) */
+  openMode: 'DRIVE' | 'CSSE'
+  /** Boleh mengajukan permintaan akses (tahu dokumen ada, tapi belum boleh membuka). */
+  canRequestAccess: boolean
+  approver: 'GM' | 'OWNER' | null
+  denyReason: string | null
+}
+
 export interface DocumentDetail extends DocumentDto {
   supersedes: DocumentRef | null
   supersededBy: DocumentRef | null
-  permissions: { canEdit: boolean; canArchive: boolean }
+  permissions: DocumentPermissions
 }
 
 export const facts = (r: DocumentRow): DocFacts => ({
@@ -95,6 +109,22 @@ export const facts = (r: DocumentRow): DocFacts => ({
   ownerApprovalRequired: r.owner_approval_required,
   status: r.status,
 })
+
+/**
+ * DTO yang aman untuk user: tautan Drive hanya untuk L1–2 yang boleh dibuka (L3–5 tidak pernah —
+ * hanya lewat proxy CSSE). Ringkasan & nomor hanya untuk yang boleh membuka.
+ */
+export function secureDocumentDto(ctx: IdentityContext, r: DocumentRow, grants: Grant[]): DocumentDto {
+  const f = facts(r)
+  const open = decide(ctx, f, 'OPEN', grants).allowed
+  const dto = toDocumentDto(r, { exposeUrl: open && openMode(f) === 'DRIVE' })
+  if (!open) {
+    dto.confirmedSummary = null
+    dto.documentNumber = null
+  }
+  if (ctx.roleId !== 'OWNER') dto.externalResourceId = null
+  return dto
+}
 
 export function toDocumentDto(r: DocumentRow, opts: { exposeUrl?: boolean } = {}): DocumentDto {
   return {
@@ -141,16 +171,22 @@ export async function loadDocumentRow(q: Sql | Tx, id: string): Promise<Document
   return row ?? null
 }
 
-/** Memuat dokumen + memastikan user boleh melihatnya. Penolakan diaudit (ACCESS_DENIED). */
+/** Memuat dokumen + memastikan user boleh mengetahuinya. Penolakan diaudit (ACCESS_DENIED). */
 export async function loadVisibleDocument(ctx: IdentityContext, documentId: unknown, attemptedAction = 'DOCUMENT_VIEWED') {
+  const { row } = await loadVisibleDocumentWithGrants(ctx, documentId, attemptedAction)
+  return row
+}
+
+export async function loadVisibleDocumentWithGrants(ctx: IdentityContext, documentId: unknown, attemptedAction = 'DOCUMENT_VIEWED') {
   const id = requireUuid(documentId, 'Dokumen')
   const row = await loadDocumentRow(db(), id)
   if (!row) throw new ServiceError('NOT_FOUND', 'Dokumen tidak ditemukan.')
-  if (!canView(ctx, facts(row))) {
+  const grants = await loadGrants(db(), id)
+  if (!canView(ctx, facts(row), grants)) {
     await auditAs(ctx, { action: 'ACCESS_DENIED', resourceType: 'DOCUMENT', resourceId: id, result: 'DENIED', metadata: { attempted: attemptedAction } })
     throw new ServiceError('ACCESS_DENIED', 'Akses ditolak. Anda tidak memiliki izin untuk dokumen ini.')
   }
-  return row
+  return { row, grants }
 }
 
 async function deny(ctx: IdentityContext, id: string, attempted: string, message = 'Akses ditolak. Anda tidak memiliki izin untuk tindakan ini.'): Promise<never> {
@@ -210,6 +246,11 @@ export async function createDocumentRecord(ctx: IdentityContext, input: unknown)
     await auditAs(ctx, { action: 'DOCUMENT_CREATED', resourceType: 'DOCUMENT', result: 'DENIED', metadata: { divisionId } })
     throw new ServiceError('ACCESS_DENIED', 'Anda hanya dapat mendaftarkan dokumen untuk divisi Anda sendiri.')
   }
+  if (data.securityLevel > maxLevelOnCreate(ctx)) {
+    throw new ServiceError('VALIDATION', `securityLevel: Anda hanya dapat mendaftarkan dokumen sampai L${maxLevelOnCreate(ctx)}. Minta Owner menaikkan level setelahnya.`)
+  }
+  // Division User yang mendaftarkan tanpa PIC menjadi PIC-nya sendiri (agar tetap bisa membuka dokumennya).
+  if (!data.picUserId && ctx.roleId === 'DIVISION_USER') data.picUserId = ctx.userId
   await assertRefs(db(), data)
   const ext = resolveExternal(data)
   if (ext.externalResourceId) {
@@ -230,12 +271,15 @@ export async function createDocumentRecord(ctx: IdentityContext, input: unknown)
     return row.document_id
   })
   if (data.supersedesDocumentId) await supersedeDocument(ctx, created, data.supersedesDocumentId)
-  return toDocumentDto((await loadDocumentRow(db(), created))!)
+  const row = (await loadDocumentRow(db(), created))!
+  return secureDocumentDto(ctx, row, await loadGrants(db(), created))
 }
 
 // ── get_document_metadata ───────────────────────────────────────────────
 export async function getDocumentMetadata(ctx: IdentityContext, documentId: unknown): Promise<DocumentDetail> {
-  const row = await loadVisibleDocument(ctx, documentId, 'DOCUMENT_VIEWED')
+  const { row, grants } = await loadVisibleDocumentWithGrants(ctx, documentId, 'DOCUMENT_VIEWED')
+  const f = facts(row)
+  const open = decide(ctx, f, 'OPEN', grants)
   const ref = async (where: 'prev' | 'next'): Promise<DocumentRef | null> => {
     const rows =
       where === 'prev'
@@ -244,14 +288,23 @@ export async function getDocumentMetadata(ctx: IdentityContext, documentId: unkn
           : []
         : await db()<DocumentRow[]>`select * from documents where supersedes_document_id = ${row.document_id}`
     const r = rows[0]
-    if (!r || !canView(ctx, facts(r))) return null
+    if (!r || !canView(ctx, facts(r), await loadGrants(db(), r.document_id))) return null
     return { documentId: r.document_id, documentName: r.document_name, version: r.version, status: r.status }
   }
   return {
-    ...toDocumentDto(row),
+    ...secureDocumentDto(ctx, row, grants),
     supersedes: await ref('prev'),
     supersededBy: await ref('next'),
-    permissions: { canEdit: canEditMetadata(ctx, facts(row)), canArchive: canArchive(ctx, facts(row)) },
+    permissions: {
+      canOpen: open.allowed,
+      canEdit: decide(ctx, f, 'EDIT_METADATA', grants).allowed,
+      canArchive: decide(ctx, f, 'ARCHIVE', grants).allowed,
+      canManage: decide(ctx, f, 'MANAGE_PERMISSION', grants).allowed,
+      openMode: openMode(f),
+      canRequestAccess: open.requestable && row.status === 'ACTIVE',
+      approver: open.requestable ? approverFor(f) : null,
+      denyReason: open.allowed ? null : open.reason,
+    },
   }
 }
 
@@ -289,8 +342,12 @@ const TRACKED: [keyof ParsedInput | 'externalResourceId', keyof DocumentRow][] =
 ]
 
 export async function updateDocumentMetadata(ctx: IdentityContext, documentId: unknown, input: unknown): Promise<DocumentDto> {
-  const row = await loadVisibleDocument(ctx, documentId, 'DOCUMENT_UPDATED')
-  if (!canEditMetadata(ctx, facts(row))) return deny(ctx, row.document_id, 'DOCUMENT_UPDATED')
+  const { row, grants } = await loadVisibleDocumentWithGrants(ctx, documentId, 'DOCUMENT_UPDATED')
+  const dec = decide(ctx, facts(row), 'EDIT_METADATA', grants)
+  if (!dec.allowed) {
+    return deny(ctx, row.document_id, 'DOCUMENT_UPDATED',
+      dec.reason === 'OWNER_APPROVAL_REQUIRED' ? 'Dokumen ini wajib persetujuan Owner untuk diubah.' : undefined)
+  }
   const data = parseInput(DocumentInput, input)
   await assertRefs(db(), data)
   const ext = resolveExternal(data)
@@ -318,13 +375,13 @@ export async function updateDocumentMetadata(ctx: IdentityContext, documentId: u
       where document_id = ${row.document_id}`
     await auditAs(ctx, { action: 'DOCUMENT_UPDATED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'SUCCESS', metadata: { changes } }, tx)
   })
-  return toDocumentDto((await loadDocumentRow(db(), row.document_id))!)
+  return secureDocumentDto(ctx, (await loadDocumentRow(db(), row.document_id))!, grants)
 }
 
 // ── Arsip ───────────────────────────────────────────────────────────────
 export async function archiveDocument(ctx: IdentityContext, documentId: unknown) {
   const row = await loadVisibleDocument(ctx, documentId, 'DOCUMENT_ARCHIVED')
-  if (!canArchive(ctx, facts(row))) return deny(ctx, row.document_id, 'DOCUMENT_ARCHIVED', 'Hanya Owner yang dapat mengarsipkan dokumen.')
+  if (!decide(ctx, facts(row), 'ARCHIVE').allowed) return deny(ctx, row.document_id, 'DOCUMENT_ARCHIVED', 'Hanya Owner yang dapat mengarsipkan dokumen.')
   if (row.status === 'ARCHIVED') return
   await db().begin(async (tx) => {
     await tx`update documents set status = 'ARCHIVED', updated_at = now() where document_id = ${row.document_id}`
@@ -334,10 +391,11 @@ export async function archiveDocument(ctx: IdentityContext, documentId: unknown)
 
 // ── Versi ───────────────────────────────────────────────────────────────
 export async function supersedeDocument(ctx: IdentityContext, newDocumentId: unknown, oldDocumentId: unknown) {
-  const neu = await loadVisibleDocument(ctx, newDocumentId, 'DOCUMENT_SUPERSEDED')
-  const old = await loadVisibleDocument(ctx, oldDocumentId, 'DOCUMENT_SUPERSEDED')
+  const { row: neu, grants: gNew } = await loadVisibleDocumentWithGrants(ctx, newDocumentId, 'DOCUMENT_SUPERSEDED')
+  const { row: old, grants: gOld } = await loadVisibleDocumentWithGrants(ctx, oldDocumentId, 'DOCUMENT_SUPERSEDED')
   if (neu.document_id === old.document_id) throw new ServiceError('VALIDATION', 'Dokumen tidak dapat menggantikan dirinya sendiri.')
-  if (!canEditMetadata(ctx, facts(neu)) || !canEditMetadata(ctx, facts(old))) return deny(ctx, old.document_id, 'DOCUMENT_SUPERSEDED')
+  if (!decide(ctx, facts(neu), 'EDIT_METADATA', gNew).allowed || !decide(ctx, facts(old), 'EDIT_METADATA', gOld).allowed)
+    return deny(ctx, old.document_id, 'DOCUMENT_SUPERSEDED')
   if (old.status !== 'ACTIVE') throw new ServiceError('VALIDATION', 'Dokumen lama harus berstatus aktif untuk digantikan.')
   if (neu.status !== 'ACTIVE') throw new ServiceError('VALIDATION', 'Dokumen pengganti harus berstatus aktif.')
   if (neu.supersedes_document_id) throw new ServiceError('VALIDATION', 'Dokumen ini sudah menggantikan dokumen lain.')
@@ -366,8 +424,8 @@ export interface ListOptions {
 }
 
 export async function listDocuments(ctx: IdentityContext, opts: ListOptions): Promise<DocumentDto[]> {
-  const q = db()
   const status = opts.status ?? 'ACTIVE'
+  return withUserScope(ctx.userId, async (q) => {
   const rows = await q<DocumentRow[]>`
     ${documentSelect(q)}
     where ${visibleDocumentsWhere(q, ctx)}
@@ -375,7 +433,9 @@ export async function listDocuments(ctx: IdentityContext, opts: ListOptions): Pr
       and ${opts.scope === 'mine' ? q`d.pic_user_id = ${ctx.userId}` : opts.scope === 'division' ? q`d.division_id = ${ctx.divisionId}` : q`true`}
     order by d.updated_at desc
     limit ${opts.limit ?? 200}`
-  return rows.map((r) => toDocumentDto(r))
+  const grants = await loadGrantsFor(q, rows.map((r) => r.document_id))
+  return rows.map((r) => secureDocumentDto(ctx, r, grants.get(r.document_id) ?? []))
+  })
 }
 
 // ── Direktori user untuk pilihan PIC ───────────────────────────────────

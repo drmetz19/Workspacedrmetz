@@ -31,3 +31,18 @@ export const FIELD_LABEL: Record<string, string> = {
   expiryDate: 'Tgl kedaluwarsa',
   confirmedSummary: 'Ringkasan',
 }
+
+export function describePermissionChange(m: Record<string, unknown>): string {
+  switch (m.kind) {
+    case 'SECURITY_LEVEL':
+      return `Level L${m.from} → L${m.to}`
+    case 'OWNER_APPROVAL_REQUIRED':
+      return m.to ? 'Wajib persetujuan Owner diaktifkan' : 'Wajib persetujuan Owner dimatikan'
+    case 'GRANT':
+      return `Izin ${m.permissionType} diberikan (${m.principalType})`
+    case 'REVOKE':
+      return `Izin ${m.permissionType} dicabut (${m.principalType})`
+    default:
+      return String(m.attempted ?? '')
+  }
+}

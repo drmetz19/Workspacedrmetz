@@ -9,6 +9,7 @@ const PHASES: Record<number, string> = {
   1: 'Login undangan',
   2: 'Admin organisasi',
   3: 'Registry manual + versi',
+  4: 'Permission engine',
 }
 
 async function main() {

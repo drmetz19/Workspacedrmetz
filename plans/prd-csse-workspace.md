@@ -140,7 +140,14 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 | L3 Confidential | Divisi terkait + GM + Owner | PIC + GM + Owner; lainnya via request (approver: GM atau Owner) | Lewat CSSE |
 | L4 Restricted | GM + Owner + PIC | Owner + PIC; GM & lainnya via request (approver: Owner) | Lewat CSSE |
 | L5 Executive | Owner (+ grant eksplisit) | Owner; lainnya via request (approver: Owner) | Lewat CSSE |
-- Flag `OWNER_APPROVAL_REQUIRED` bisa dipasang per dokumen; menimpa approver menjadi Owner.
+- Flag `OWNER_APPROVAL_REQUIRED` bisa dipasang per dokumen; menimpa approver menjadi Owner, dan GM kehilangan hak default membuka/mengubah dokumen tersebut (harus lewat persetujuan Owner).
+- PIC selalu termasuk "boleh tahu" untuk L1–4; dokumen L5 hanya Owner kecuali grant eksplisit.
+- Untuk yang boleh tahu tetapi belum boleh membuka: nama, kategori, level, PIC, tanggal tampil; **nomor dokumen dan ringkasan disembunyikan**.
+- Level saat mendaftarkan dibatasi: Division User maks L3, GM maks L4, Owner L1–5 (menaikkan level setelahnya = Owner). Division User yang mendaftarkan tanpa PIC otomatis menjadi PIC.
+- Tautan Drive L3–5 tidak pernah dikirim ke browser siapa pun (termasuk Owner) — hanya lewat proxy CSSE. File Drive ID hanya ditampilkan ke Owner.
+- Grant eksplisit: Lihat metadata / Buka / Ubah metadata, untuk User / Divisi / Role, opsional tanggal berakhir; dicabut = `revoked_at` (tidak dihapus).
+- Kebijakan "boleh tahu" juga diimplementasikan sebagai fungsi Postgres `csse_can_view_document` dan dipakai oleh RLS + query daftar; paritas dengan engine TypeScript diuji otomatis.
+- Hardening Supabase: semua hak role `anon`/`authenticated` pada tabel & fungsi CSSE dicabut (data tidak bisa dibaca lewat REST API Supabase).
 - Permission eksplisit per dokumen dapat menambah akses di atas default.
 - Keputusan akses **deterministik** — tidak pernah diputuskan oleh LLM.
 
@@ -201,6 +208,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - **A6.** Owner bertindak sebagai Admin di pilot (tidak ada role Admin terpisah).
 - **A7.** Reminder kedaluwarsa hanya di dashboard (≤90 hari); notifikasi email ditunda.
 - **A8.** Scan otomatis sekali sehari + tombol scan manual.
+- **A9.** Batas level saat pendaftaran (DU ≤ L3, GM ≤ L4) dan nomor/ringkasan disembunyikan bagi yang belum boleh membuka.
 
 ### DECISION REQUIRED
 - **D1.** Provider AI pertama (rekomendasi: Anthropic Claude via adapter). Perlu dipastikan juga kebijakan pengiriman data dokumen klinik ke provider eksternal.
@@ -218,6 +226,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 4 · Engine izin dilengkapi aturan yang tidak tertulis di tabel level: GM kehilangan hak default pada dokumen OWNER_APPROVAL_REQUIRED, metadata sensitif disembunyikan bagi yang hanya 'boleh tahu', batas level saat pendaftaran per role, auto-PIC untuk Division User, cabut hak REST Supabase — alasan: menutup celah kebocoran & mencegah pembuat dokumen terkunci dari dokumennya sendiri. Perlu konfirmasi Owner (lihat A9).
 - 2026-10-02 · Phase 3 · Riwayat dokumen diambil dari audit event (bukan tabel riwayat terpisah); tautan Drive apa pun bentuknya (file/Docs/Sheets/open?id=) dinormalisasi ke file ID untuk deteksi duplikat; satu dokumen hanya bisa digantikan satu versi (rantai linear) — alasan: audit sudah menjadi sumber kebenaran, dan duplikat link berbeda-bentuk harus tertangkap.
 - 2026-10-02 · Phase 2 · Ditambah: aktifkan kembali user nonaktif, Owner tidak bisa menurunkan role sendiri, divisi/kategori bisa dinonaktifkan (tidak dihapus) — alasan: edge case administrasi yang muncul saat implementasi; menjaga riwayat dan mencegah Owner terkunci dari admin.
 - 2026-10-02 · Phase 1 · Undangan disimpan sebagai user `INVITED`, sesi milik CSSE, identity & email lewat adapter (local/outbox untuk dev) — alasan: Supabase belum tersedia dan login harus bisa diganti provider tanpa mengubah logika undangan/lockout/audit. Ditambah D4 (penyedia email).

@@ -76,12 +76,12 @@ User berwenang membuat record dokumen secara manual (metadata + link/ID Drive), 
 Permission engine deterministik yang menerapkan tabel kebijakan level L1–5 (siapa tahu dokumen ada, siapa bisa membuka) + permission eksplisit per dokumen (USER/ROLE/DIVISION, opsional `expires_at`) + flag OWNER_APPROVAL_REQUIRED. Dicerminkan dengan RLS. L1–2 menampilkan link Drive langsung; L3–5 tidak pernah menampilkan link Drive. Owner dapat mengubah level (diaudit sebagai perubahan permission) dan memberi grant eksplisit. Akses ditolak menampilkan pesan jelas dan diaudit.
 
 ### Acceptance criteria
-- [ ] Unit test engine mencakup seluruh sel tabel kebijakan level untuk tiap role
-- [ ] User divisi lain tidak melihat dokumen L2 divisi lain di daftar maupun via API langsung
-- [ ] User HR yang membuka URL dokumen L5 mendapat `ACCESS_DENIED` (UI dan API) dan event diaudit
-- [ ] Query langsung ke database dengan sesi user tetap dibatasi RLS
-- [ ] Grant eksplisit ke satu user membuat dokumen terlihat/terbuka hanya untuk user itu; grant kedaluwarsa tidak berlaku
-- [ ] Dokumen L3–5 tidak pernah mengekspos `external_url` ke user mana pun selain lewat proxy
+- [x] Unit test engine mencakup seluruh sel tabel kebijakan level untuk tiap role
+- [x] User divisi lain tidak melihat dokumen L2 divisi lain di daftar maupun via API langsung
+- [x] User HR yang membuka URL dokumen L5 mendapat `ACCESS_DENIED` (UI dan API) dan event diaudit
+- [x] Query langsung ke database dengan sesi user tetap dibatasi RLS
+- [x] Grant eksplisit ke satu user membuat dokumen terlihat/terbuka hanya untuk user itu; grant kedaluwarsa tidak berlaku
+- [x] Dokumen L3–5 tidak pernah mengekspos `external_url` ke user mana pun selain lewat proxy
 
 ---
 

@@ -1,12 +1,16 @@
 import Link from 'next/link'
 import { requireUser, sp, type SearchParams } from '@/lib/session'
-import { getDocumentHistory, getDocumentMetadata, listDocuments } from '@/server/services/documents'
+import { getDocumentHistory, getDocumentMetadata, listDocuments, listUserOptions } from '@/server/services/documents'
+import { listDocumentPermissions } from '@/server/services/permissions'
+import { listDivisions } from '@/server/services/org'
+import { SecurityPanel } from '@/components/SecurityPanel'
+import { OpenPanel } from '@/components/OpenPanel'
 import { guard } from '@/lib/page-guard'
 import { Flash } from '@/components/Flash'
 import { AccessDenied } from '@/components/AccessDenied'
 import { ExpiryBadge, LevelBadge, StatusBadge } from '@/components/Badges'
 import { fmtDate, fmtDateTime } from '@/lib/labels'
-import { ACTION_LABEL, FIELD_LABEL } from '@/lib/history-labels'
+import { ACTION_LABEL, FIELD_LABEL, describePermissionChange } from '@/lib/history-labels'
 
 export default async function DocumentDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
   const user = await requireUser()
@@ -16,6 +20,9 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
   if (!res.ok) return <AccessDenied message={res.message} />
   const d = res.data
   const history = await getDocumentHistory(user, id)
+  const manage = d.permissions.canManage
+    ? { grants: await listDocumentPermissions(user, id), users: await listUserOptions(user), divisions: await listDivisions(user) }
+    : null
   const replaceable = d.permissions.canEdit && d.status === 'ACTIVE' && !d.supersedes
     ? (await listDocuments(user, { status: 'ACTIVE' })).filter((x) => x.documentId !== d.documentId)
     : []
@@ -37,7 +44,6 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
           </div>
         </div>
         <div className="row">
-          {d.externalUrl && <a className="btn btn-primary" href={d.externalUrl} target="_blank" rel="noreferrer">Buka di Google Drive ↗</a>}
           {d.permissions.canEdit && <Link className="btn" href={`/documents/${d.documentId}/edit`}>Ubah metadata</Link>}
         </div>
       </div>
@@ -47,6 +53,8 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
           Dokumen ini sudah tidak berlaku. Versi aktif: <Link href={`/documents/${d.supersededBy.documentId}`}>{d.supersededBy.documentName} (v{d.supersededBy.version})</Link>
         </div>
       )}
+
+      <OpenPanel doc={d} />
 
       <div className="grid grid-2">
         <div className="card">
@@ -60,7 +68,8 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
             <dt>Tanggal berlaku</dt><dd>{fmtDate(d.effectiveDate)}</dd>
             <dt>Kedaluwarsa</dt><dd><ExpiryBadge date={d.expiryDate} /></dd>
             <dt>ID dokumen</dt><dd className="mono">{d.documentId}</dd>
-            <dt>File Drive</dt><dd className="mono">{d.externalResourceId ?? '—'}</dd>
+            {d.externalResourceId && <><dt>File Drive</dt><dd className="mono">{d.externalResourceId}</dd></>}
+            {d.ownerApprovalRequired && <><dt>Persetujuan</dt><dd><span className="badge badge-warn">Wajib persetujuan Owner</span></dd></>}
           </dl>
           {d.confirmedSummary && (
             <>
@@ -104,6 +113,8 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
         </div>
       </div>
 
+      {manage && <SecurityPanel doc={d} grants={manage.grants} users={manage.users} divisions={manage.divisions} />}
+
       <div className="card">
         <h2>Riwayat</h2>
         {history.length === 0 ? (
@@ -119,6 +130,9 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
                   <span className="small muted">{fmtDateTime(h.occurredAt)}</span>
                 </div>
                 <div className="small muted">{h.actorName ?? h.actorEmail ?? 'Sistem'}</div>
+                {h.action === 'PERMISSION_CHANGED' && (
+                  <div className="small">{describePermissionChange(h.metadata)}</div>
+                )}
                 {h.action === 'DOCUMENT_UPDATED' && h.metadata.changes !== undefined && (
                   <div className="small">
                     {Object.keys(h.metadata.changes as Record<string, unknown>).map((k) => FIELD_LABEL[k] ?? k).join(', ') || 'Tidak ada perubahan'}
