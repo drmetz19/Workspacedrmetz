@@ -20,7 +20,7 @@
 - **Status dokumen**: DRAFT → ACTIVE → SUPERSEDED / ARCHIVED; flag SOURCE_MISSING, CONTENT_UNREADABLE.
 - **Kebijakan level**: tabel di PRD (Implementation Decisions → Kebijakan level keamanan) adalah satu-satunya sumber aturan; diimplementasikan deterministik di permission engine, dicerminkan RLS.
 - **UI design system**: Stitch "Clinical Governance Workspace" (navy #0B192C, cyan #00ADB5, Inter, radius 4px, badge level L1–L5 berwarna, topbar + sidebar 240px). Font self-hosted (Inter, Material Symbols).
-- **Third-party boundaries**: Google Drive via akun service / domain-wide delegation (butuh D2); AI via satu adapter, satu provider (butuh D1).
+- **Third-party boundaries**: Google Drive **mode tautan** di produksi (`DRIVE_PROVIDER=link`: dokumen = tautan Drive, izin file dari setelan berbagi Drive; mode akun service `google` tetap tersedia); email via Gmail SMTP projectcuan15@gmail.com (`EMAIL_PROVIDER=smtp`); AI via satu adapter, satu provider (butuh D1).
 
 ---
 
@@ -206,3 +206,31 @@ Halaman audit (Owner) dengan filter user, dokumen, aksi, tanggal. Audit append-o
 - [x] Checklist event PRD story 46 seluruhnya muncul di log setelah smoke test end-to-end
 - [x] Drive adapter dipaksa error → pencarian tetap jalan, buka file menampilkan pesan jelas
 - [x] Kredensial Drive dicabut → kartu peringatan muncul di dashboard Owner
+
+---
+
+## Phase 13: Drive mode tautan
+**User stories**: 52, 53, 54, 55
+
+### What to build
+Mode `DRIVE_PROVIDER=link`: dokumen didaftarkan dengan tautan Drive (file atau folder). Semua level dibuka lewat redirect `/api/documents/{id}/open-drive` setelah izin CSSE diperiksa dan audit dicatat; `/api/files/{id}` diarahkan ke jalur yang sama. Sumber Drive & scan nonaktif dengan pesan jelas; menu Sumber Drive disembunyikan; Command Center menampilkan "Mode tautan".
+
+### Acceptance criteria
+- [x] Tautan folder Drive diterima sebagai lokasi dokumen
+- [x] User berwenang membuka dokumen L4 → redirect ke tautan Drive + `DOCUMENT_OPENED` (via DRIVE_LINK) tercatat
+- [x] User tanpa hak ditolak CSSE dan tidak menerima tautan
+- [x] Link lama `/api/files/{id}` diarahkan ke jalur tautan
+- [x] Menghubungkan folder untuk scan ditolak dengan pesan jelas; menu Sumber Drive tersembunyi; dashboard "Mode tautan"
+
+---
+
+## Phase 14: Email Gmail SMTP
+**User stories**: 56
+
+### What to build
+Adapter email `smtp` (default host Gmail, port 465) dengan pengirim `"Dr. Metz Workspace" <projectcuan15@gmail.com>`. Setiap email tetap disalin ke outbox; gagal kirim atau SMTP belum dikonfigurasi tidak menggagalkan undangan/reset.
+
+### Acceptance criteria
+- [x] Undangan dari Owner terkirim lewat SMTP terautentikasi ke email yang diundang
+- [x] Pengirim projectcuan15@gmail.com dengan nama "Dr. Metz Workspace", isi memuat tautan undangan
+- [x] Gagal kirim / SMTP_PASS kosong → alur tetap jalan, email tercatat di outbox

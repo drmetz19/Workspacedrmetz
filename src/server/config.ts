@@ -14,8 +14,25 @@ export const config = {
   get allowDevIdp() {
     return process.env.CSSE_ALLOW_DEV_IDP === '1'
   },
-  get emailProvider(): 'outbox' {
-    return 'outbox'
+  /** outbox = hanya disimpan di tabel; smtp = dikirim lewat SMTP (default Gmail) + salinan di outbox. */
+  get emailProvider(): 'outbox' | 'smtp' {
+    return process.env.EMAIL_PROVIDER === 'smtp' ? 'smtp' : 'outbox'
+  },
+  smtp: {
+    get host() { return process.env.SMTP_HOST ?? 'smtp.gmail.com' },
+    get port() { return Number(process.env.SMTP_PORT ?? 465) },
+    get user() { return process.env.SMTP_USER ?? '' },
+    get pass() { return process.env.SMTP_PASS ?? '' },
+    get from() { return process.env.EMAIL_FROM ?? `"Dr. Metz Workspace" <${process.env.SMTP_USER ?? ''}>` },
+  },
+  /**
+   * link   = dokumen cukup berupa tautan Drive; izin file diatur setelan berbagi Drive (tanpa akun service, tanpa scan).
+   * google = akun service CSSE (scan folder + proxy L3–5).
+   * mock   = pengembangan/test.
+   */
+  get driveMode(): 'link' | 'google' | 'mock' {
+    const v = process.env.DRIVE_PROVIDER
+    return v === 'link' || v === 'google' ? v : 'mock'
   },
   supabase: {
     get url() { return process.env.SUPABASE_URL ?? '' },

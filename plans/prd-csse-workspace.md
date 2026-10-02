@@ -99,6 +99,13 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 50. As a user, when the AI provider is down, I want structured search to still work and a message that AI search is temporarily unavailable, so that work continues.
 51. As an Owner, when the Drive connection's authorization expires or is revoked, I want a visible warning on the dashboard, so that scanning doesn't silently stop.
 
+### J. Mode tautan Drive & email produksi (keputusan Owner 2 Okt 2026)
+52. As an Owner/PIC, I want to register a document just by pasting its Google Drive link (file or folder), so that I don't need a service account or folder scanning.
+53. As an Owner, I want who-can-open-the-file to follow the file's own Drive sharing settings, so that permission is managed in one familiar place (tombol "Bagikan" di Drive).
+54. As a user allowed by CSSE, I want to open any level document via its Drive link, with every open still recorded in the audit, so that access stays traceable.
+55. As a user not allowed by CSSE, I want to be refused without receiving the Drive link, so that CSSE remains the gatekeeper of the directory.
+56. As an invited user, I want invitation, reset-password, and approval emails to come from projectcuan15@gmail.com, so that I recognise the sender and actually receive them.
+
 ---
 
 ## Implementation Decisions
@@ -120,7 +127,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Sesi dikelola CSSE sendiri (cookie httpOnly, 12 jam) — independen dari identity provider, sehingga provider bisa diganti (Supabase → DrMetz ID) tanpa mengubah service.
 - Identity provider lewat adapter: `supabase` (produksi) dan `local` (pengembangan: password bcrypt di DB + simulasi layar Google, hanya aktif bila `CSSE_ALLOW_DEV_IDP=1`).
 - Token undangan/reset password dibuat & divalidasi CSSE (sekali pakai, kedaluwarsa 72 jam / 60 menit); lockout 15 menit setelah 5 kali gagal; reset password juga membuka kunci.
-- Email lewat adapter; MVP memakai `outbox` (tabel email_outbox). Penyedia email produksi = **D4**.
+- Email lewat adapter: `outbox` (dev/test, tabel email_outbox) dan `smtp` (produksi: Gmail SMTP dengan pengirim **projectcuan15@gmail.com**, App Password Google). Salinan setiap email tetap disimpan di outbox; gagal kirim tidak menggagalkan undangan/reset.
 
 ### Data model (mengikuti v0.2, disederhanakan untuk pilot)
 - **User**, **Role** (Owner, GM, Division User — extensible), **Division**, **Category**.
@@ -147,7 +154,7 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - PIC selalu termasuk "boleh tahu" untuk L1–4; dokumen L5 hanya Owner kecuali grant eksplisit.
 - Untuk yang boleh tahu tetapi belum boleh membuka: nama, kategori, level, PIC, tanggal tampil; **nomor dokumen dan ringkasan disembunyikan**.
 - Level saat mendaftarkan dibatasi: Division User maks L3, GM maks L4, Owner L1–5 (menaikkan level setelahnya = Owner). Division User yang mendaftarkan tanpa PIC otomatis menjadi PIC.
-- Tautan Drive L3–5 tidak pernah dikirim ke browser siapa pun (termasuk Owner) — hanya lewat proxy CSSE. File Drive ID hanya ditampilkan ke Owner.
+- Mode akun service (`google`): tautan Drive L3–5 tidak pernah dikirim ke browser siapa pun (termasuk Owner) — hanya lewat proxy CSSE. **Mode tautan (`link`, dipakai produksi):** semua level dibuka lewat tautan Drive setelah CSSE memeriksa izin & mencatat audit; kerahasiaan file L3–5 dijaga oleh setelan berbagi Drive (dibagikan hanya ke orang berwenang).
 - Grant eksplisit: Lihat metadata / Buka / Ubah metadata, untuk User / Divisi / Role, opsional tanggal berakhir; dicabut = `revoked_at` (tidak dihapus).
 - Kebijakan "boleh tahu" juga diimplementasikan sebagai fungsi Postgres `csse_can_view_document` dan dipakai oleh RLS + query daftar; paritas dengan engine TypeScript diuji otomatis.
 - Hardening Supabase: semua hak role `anon`/`authenticated` pada tabel & fungsi CSSE dicabut (data tidak bisa dibaca lewat REST API Supabase).
@@ -162,7 +169,8 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 - Akses berakhir tepat waktu oleh engine (grant punya `expires_at`); cron per jam menandai status `EXPIRED` dan mencabut grant. Notifikasi approver/pemohon lewat adapter email.
 
 ### Google Drive
-- Akses Drive lewat **akun service / domain-wide delegation** milik Google Workspace organisasi.
+- **Mode tautan (`DRIVE_PROVIDER=link`, keputusan Owner untuk produksi):** dokumen cukup didaftarkan dengan tautan Google Drive (file atau folder). Tidak ada akun service, tidak ada scan folder. Izin membuka file = setelan berbagi Drive file tersebut. CSSE tetap menjadi gerbang direktori (siapa boleh tahu/buka), membuka lewat redirect `/api/documents/{id}/open-drive` (dicatat `DOCUMENT_OPENED via DRIVE_LINK`), dan link lama `/api/files/{id}` diarahkan ke jalur yang sama. Menu Sumber Drive & cron scan nonaktif; Command Center menampilkan "Mode tautan".
+- Mode akun service (`google`, opsional kelak) — akses Drive lewat **akun service / domain-wide delegation** milik Google Workspace organisasi:
 - Folder **standar** (L1–2): file tetap di Drive biasa; CSSE hanya index + link.
 - Folder **terbatas** (L3–5): Shared Drive yang hanya bisa diakses akun service CSSE + Owner. File dibuka user lewat CSSE: sistem mengambil file dan menyajikan view/download (file Google Docs/Sheets native diekspor ke PDF). Akses read-only — mengedit file L3–5 tidak lewat CSSE di MVP. Respons proxy `no-store`; hanya PDF/gambar/teks yang ditampilkan inline, tipe lain (mis. HTML) selalu diunduh agar tidak berjalan di origin aplikasi. File yang tidak ditemukan saat dibuka otomatis ditandai "sumber hilang".
 - Deteksi perubahan: re-scan manual + scan otomatis harian (Vercel Cron 02.00 WIB, dilindungi `CRON_SECRET`); dedupe berdasarkan `external_resource_id`.
@@ -237,8 +245,8 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 
 ### DECISION REQUIRED
 - **D1.** Provider AI pertama (rekomendasi: Anthropic Claude via adapter). Perlu dipastikan juga kebijakan pengiriman data dokumen klinik ke provider eksternal.
-- **D2.** Siapa yang menjadi akun service / admin Workspace yang mengizinkan akses Drive (butuh admin Google Workspace organisasi).
-- **D4.** Penyedia email transaksional untuk undangan & reset password (mis. SMTP Google Workspace atau Resend).
+- ~~**D2.**~~ Diputuskan: mode tautan Drive (tanpa akun service), izin file dari setelan berbagi Drive.
+- ~~**D4.**~~ Diputuskan: Gmail SMTP dari projectcuan15@gmail.com (butuh App Password Google di env `SMTP_PASS`).
 - **D3.** Region data Supabase (rekomendasi: Singapore, terdekat dengan Indonesia) dan kepatuhan terhadap UU PDP.
 
 ### Metrik sukses pilot
@@ -251,6 +259,8 @@ Mini app web **CSSE** di dalam Dr. Metz Workspace yang menjadi **index + gerbang
 ---
 
 ## Changelog
+- 2026-10-02 · Phase 14 · D4 diputuskan: email produksi lewat Gmail SMTP dari projectcuan15@gmail.com (`EMAIL_PROVIDER=smtp`, App Password), salinan tetap di outbox, kegagalan kirim tidak menggagalkan alur — alasan: keputusan Owner; email utama klinik.
+- 2026-10-02 · Phase 13 · D2 diputuskan: mode tautan Drive — dokumen cukup tautan Drive (file/folder), izin file dari setelan berbagi Drive, tanpa akun service/scan; semua level dibuka via redirect CSSE yang diaudit (mengubah A4: L3–5 tidak lagi wajib proxy CSSE di mode ini) — alasan: keputusan Owner agar operasional lebih mudah.
 - 2026-10-02 · Go-live Supabase · Migrasi 0009–0010: RLS aktif di semua tabel public + policy baca eksplisit untuk role sesi user, fungsi CSSE tidak bisa dipanggil lewat REST RPC, search_path fungsi dikunci — alasan: temuan Supabase security advisor. Project Supabase memakai region ap-northeast-2 (Seoul), bukan Singapore (D3).
 - 2026-10-02 · Phase 12 · Ditambah ekspor CSV audit, pencatatan pembukaan L1–2 lewat redirect CSSE, blokir TRUNCATE audit (bypass hanya via setting sesi untuk pemeliharaan/test) — alasan: checklist story 46 "dokumen dibuka" juga berlaku untuk L1–2; kebutuhan rekap untuk akreditasi.
 - 2026-10-02 · Phase 11 · Kartu "Akan kedaluwarsa" juga memuat dokumen yang sudah lewat (ditandai kritis); divisi punya "penanggung jawab" (manager) yang diatur Owner — alasan: mengikuti mockup Stitch & dokumen lewat masa berlaku justru paling mendesak.

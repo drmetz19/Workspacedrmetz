@@ -14,21 +14,25 @@ Untuk go-live, isi variabel berikut di Vercel (Project → Settings → Environm
 
 > Catatan keamanan: migrasi mencabut semua hak role `anon`/`authenticated` atas tabel CSSE, jadi data tidak bisa dibaca lewat REST API Supabase.
 
-## 2. Google Drive (akun service) — **D2**
-1. Google Cloud Console → buat Service Account → buat key JSON.
-2. Aktifkan **Google Drive API** di project tersebut.
-3. `DRIVE_PROVIDER=google`, `GOOGLE_SERVICE_ACCOUNT_JSON` = isi file JSON (boleh base64).
-4. Bagikan folder Legal/Perizinan ke email service account (Viewer).
-5. Buat **Shared Drive terbatas** untuk L3–5: anggota hanya service account (+ Owner). Hubungkan sebagai tipe *Terbatas* di menu Sumber Drive.
-6. (Opsional) Domain-wide delegation + `GOOGLE_IMPERSONATE_SUBJECT` bila ingin membaca atas nama admin Workspace.
+## 2. Google Drive — mode tautan (D2 diputuskan)
+Tidak perlu akun service.
+1. Di Vercel set `DRIVE_PROVIDER=link`.
+2. Di Google Drive, klik **Bagikan** pada file/folder dan atur siapa yang boleh membuka. Untuk L3–5 bagikan **hanya** ke orang yang berwenang (jangan "Siapa saja yang memiliki link").
+3. Salin tautannya → di CSSE **Tambah dokumen** → tempel di kolom "Tautan Google Drive (file atau folder)".
+4. CSSE menyaring siapa yang bisa melihat dokumen di direktori dan mencatat setiap pembukaan di audit; izin membuka file tetap dari Drive.
+
+> Mode akun service (`DRIVE_PROVIDER=google` + `GOOGLE_SERVICE_ACCOUNT_JSON`) masih tersedia bila nanti ingin scan folder otomatis & proxy L3–5.
 
 ## 3. AI — **D1**
 - `AI_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, `AI_MODEL` (default `claude-sonnet-5-5`).
 - Yang dikirim ke AI: metadata + ringkasan terkonfirmasi (Ask AI) dan isi teks file **hanya dari folder standar** (saran metadata). Isi folder terbatas tidak pernah dikirim.
 - Tanpa AI: set `AI_PROVIDER=none` — semua fitur lain tetap jalan; Ask AI menampilkan "AI sementara tidak tersedia".
 
-## 4. Email — **D4**
-Undangan, reset password, dan notifikasi approval saat ini masuk tabel `email_outbox`. Untuk produksi perlu penyedia email (SMTP Google Workspace atau Resend) — adapter tinggal ditambah di `src/server/integrations/email`.
+## 4. Email — Gmail projectcuan15@gmail.com (D4 diputuskan)
+1. Login ke akun Google **projectcuan15@gmail.com** → myaccount.google.com → **Keamanan** → aktifkan **Verifikasi 2 Langkah**.
+2. Buka myaccount.google.com/apppasswords → buat **Sandi aplikasi** (nama: CSSE) → salin 16 karakternya (tanpa spasi).
+3. Di Vercel set: `EMAIL_PROVIDER=smtp`, `SMTP_USER=projectcuan15@gmail.com`, `SMTP_PASS=<sandi aplikasi>` (host default `smtp.gmail.com`, port 465). Redeploy.
+4. Pengirim tampil sebagai "Dr. Metz Workspace" <projectcuan15@gmail.com>. Salinan setiap email tetap disimpan di tabel `email_outbox`; bila kirim gagal, undangan tetap dibuat.
 
 ## 5. Lain-lain
 - `APP_URL=https://<domain-app>`
@@ -37,6 +41,6 @@ Undangan, reset password, dan notifikasi approval saat ini masuk tabel `email_ou
 
 ## Checklist uji setelah kredensial masuk
 - [ ] Login Google Owner via Supabase · undang GM & staf · login password staf
-- [ ] Hubungkan folder Drive asli → scan → review draft
-- [ ] Buka dokumen L3 dari Shared Drive terbatas lewat CSSE
+- [ ] Daftarkan dokumen dengan tautan Drive asli → buka sebagai user berwenang (Drive mengizinkan) & tidak berwenang (CSSE menolak)
+- [ ] Undang staf → email undangan masuk dari projectcuan15@gmail.com
 - [ ] Ask AI dengan provider Anthropic
