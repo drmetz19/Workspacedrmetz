@@ -93,6 +93,7 @@ export default async function MeetingDetailPage({ params, searchParams }: { para
                       {canManage && (
                         <td style={{ textAlign: 'right', paddingRight: 18 }}>
                           <form action={`/api/action-items/${a.actionItemId}/status`} method="post" className="row" style={{ justifyContent: 'flex-end' }}>
+                            <input type="hidden" name="returnTo" value={`/meetings/${m.minutesId}`} />
                             <select name="status" defaultValue={a.status} style={{ minHeight: 30, fontSize: 12, width: 'auto' }} aria-label="Ubah status">
                               <option value="BELUM_MULAI">Belum mulai</option>
                               <option value="BERJALAN">Berjalan</option>
@@ -116,6 +117,7 @@ export default async function MeetingDetailPage({ params, searchParams }: { para
           <h2>Tambah Tindak Lanjut</h2>
           <form action="/api/action-items" method="post" className="form-grid">
             <input type="hidden" name="minutesId" value={m.minutesId} />
+            <input type="hidden" name="returnTo" value={`/meetings/${m.minutesId}`} />
             <div className="field" style={{ gridColumn: '1 / -1' }}>
               <label htmlFor="description">Deskripsi tugas</label>
               <input id="description" name="description" required minLength={3} placeholder="mis. Siapkan draft perpanjangan SIP ke notaris" />
