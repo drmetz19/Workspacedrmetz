@@ -124,7 +124,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Se
                   <th>Divisi</th>
                   <th>Penanggung jawab (PIC)</th>
                   <th>Masa berlaku / status</th>
-                  <th>Google Drive</th>
+                  <th>Berkas</th>
                   <th style={{ textAlign: 'right' }}>Aksi</th>
                 </tr>
               </thead>
@@ -161,8 +161,9 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Se
                       <td><ValidityBadge doc={d} /></td>
                       <td>
                         {d.flags.sourceMissing ? <span className="drive-state warn"><Icon name="cloud_off" size={15} /> Sumber hilang</span>
-                          : d.hasFile ? <span className="drive-state ok"><Icon name="cloud_done" size={15} /> {linkMode ? 'Tertaut' : 'Tersinkron'}</span>
-                          : <span className="drive-state"><Icon name="link_off" size={15} /> Belum ada tautan</span>}
+                          : d.fileSource === 'UPLOAD' ? <span className="drive-state ok"><Icon name="upload_file" size={15} /> Diunggah</span>
+                          : d.hasFile ? <span className="drive-state ok"><Icon name="cloud_done" size={15} /> {linkMode ? 'Tautan Drive' : 'Tersinkron'}</span>
+                          : <span className="drive-state"><Icon name="link_off" size={15} /> Belum ada berkas</span>}
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div className="row" style={{ justifyContent: 'flex-end', gap: 6, flexWrap: 'nowrap' }}>
@@ -204,12 +205,12 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Se
       </div>
 
       <div className="card drive-card">
-        <span className="drive-card-icon"><Icon name={linkMode ? 'add_link' : 'cloud_sync'} size={22} /></span>
+        <span className="drive-card-icon"><Icon name={linkMode ? 'upload_file' : 'cloud_sync'} size={22} /></span>
         <div>
-          <strong>{linkMode ? 'Dokumen ditautkan dari Google Drive' : 'Folder Google Drive tersinkronisasi otomatis'}</strong>
+          <strong>{linkMode ? 'Unggah berkas atau tautkan dari Google Drive' : 'Folder Google Drive tersinkronisasi otomatis'}</strong>
           <p className="small muted" style={{ margin: '2px 0 0' }}>
             {linkMode
-              ? 'Tempel tautan file/folder Drive saat mendaftarkan berkas. Siapa yang bisa membuka file diatur dari tombol "Bagikan" di Google Drive; CSSE menyaring direktori & mencatat setiap pembukaan.'
+              ? 'Saat mendaftarkan dokumen, pilih "Unggah file" (PDF/gambar/Word/Excel, maks 25 MB — disimpan privat di CSSE) atau tempel tautan file/folder Google Drive. CSSE menyaring siapa yang boleh membuka & mencatat setiap pembukaan.'
               : 'Folder Drive yang terhubung dipindai setiap hari pukul 02.00 WIB. File baru masuk antrean review sebelum tampil di direktori.'}
           </p>
         </div>

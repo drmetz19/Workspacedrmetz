@@ -8,15 +8,23 @@ import { parseDriveFileId } from '../integrations/drive/url'
 import { approverFor, canCreateIn, canView, decide, maxLevelOnCreate, openMode, type DocFacts, type Grant } from '../permissions/engine'
 import { visibleDocumentsWhere } from '../permissions/sql'
 import { loadGrants, loadGrantsFor } from '../permissions/grants'
+import { verifyUploadedFile } from './uploads'
 
 // ── Tipe ────────────────────────────────────────────────────────────────
 export type DocumentStatus = 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'ARCHIVED' | 'REJECTED'
 
+/** GOOGLE_DRIVE = tautan/berkas di Drive · CSSE_STORAGE = berkas diunggah ke penyimpanan CSSE (Phase 18). */
+export type ExternalProvider = 'GOOGLE_DRIVE' | 'CSSE_STORAGE'
+
 export interface DocumentRow {
   document_id: string
-  external_provider: string
+  external_provider: ExternalProvider
   external_resource_id: string | null
   external_url: string | null
+  external_mime_type?: string | null
+  file_name?: string | null
+  /** bigint → postgres.js mengembalikan string */
+  file_size?: string | number | null
   document_name: string
   document_number: string | null
   category_id: string | null
@@ -71,8 +79,14 @@ export interface DocumentDto {
   ownerApprovalRequired: boolean
   sourceId: string | null
   flags: { sourceMissing: boolean; contentUnreadable: boolean }
-  /** Ada tautan/berkas Drive (tanpa membocorkan tautannya). */
+  /** Ada tautan Drive atau berkas unggahan (tanpa membocorkan tautannya). */
   hasFile: boolean
+  /** UPLOAD = berkas diunggah ke CSSE · DRIVE = tautan Google Drive · null = belum ada berkas. */
+  fileSource: 'UPLOAD' | 'DRIVE' | null
+  /** Nama/ukuran/jenis berkas unggahan — hanya untuk yang boleh membuka. */
+  fileName: string | null
+  fileSize: number | null
+  fileMimeType: string | null
   /** User ini boleh membuka berkas (dihitung engine). */
   canOpen: boolean
   openMode: 'DRIVE' | 'CSSE'
@@ -122,15 +136,21 @@ export const facts = (r: DocumentRow): DocFacts => ({
 export function secureDocumentDto(ctx: IdentityContext, r: DocumentRow, grants: Grant[]): DocumentDto {
   const f = facts(r)
   const open = decide(ctx, f, 'OPEN', grants).allowed
-  const dto = toDocumentDto(r, { exposeUrl: open && openMode(f) === 'DRIVE' })
+  const dto = toDocumentDto(r, { exposeUrl: open && docOpenMode(r) === 'DRIVE' })
   dto.canOpen = open
   if (!open) {
     dto.confirmedSummary = null
     dto.documentNumber = null
+    // Nama berkas bisa memuat informasi sensitif (nama orang, nomor izin) — perlakukan seperti nomor dokumen.
+    dto.fileName = null
+    dto.fileSize = null
   }
   if (ctx.roleId !== 'OWNER') dto.externalResourceId = null
   return dto
 }
+
+/** Berkas unggahan selalu dibuka lewat CSSE (tidak ada tautan Drive); tautan Drive mengikuti kebijakan level/mode. */
+export const docOpenMode = (r: DocumentRow): 'DRIVE' | 'CSSE' => (r.external_provider === 'CSSE_STORAGE' ? 'CSSE' : openMode(facts(r)))
 
 export function toDocumentDto(r: DocumentRow, opts: { exposeUrl?: boolean } = {}): DocumentDto {
   return {
@@ -159,8 +179,12 @@ export function toDocumentDto(r: DocumentRow, opts: { exposeUrl?: boolean } = {}
     sourceId: r.source_id,
     flags: { sourceMissing: r.flag_source_missing, contentUnreadable: r.flag_content_unreadable },
     hasFile: !!(r.external_resource_id || r.external_url),
+    fileSource: r.external_provider === 'CSSE_STORAGE' ? (r.external_resource_id ? 'UPLOAD' : null) : r.external_resource_id || r.external_url ? 'DRIVE' : null,
+    fileName: r.external_provider === 'CSSE_STORAGE' ? (r.file_name ?? null) : null,
+    fileSize: r.external_provider === 'CSSE_STORAGE' && r.file_size != null ? Number(r.file_size) : null,
+    fileMimeType: r.external_mime_type ?? null,
     canOpen: false,
-    openMode: openMode(facts(r)),
+    openMode: docOpenMode(r),
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }
@@ -217,6 +241,10 @@ export const DocumentInput = z
     expiryDate: optionalDate,
     confirmedSummary: optionalText,
     supersedesDocumentId: optionalUuid,
+    /** upload = berkas diunggah (uploadPath) · link = tautan Drive (externalUrl). Kosong = ditebak dari field yang terisi. */
+    fileSource: z.preprocess((v) => (v === '' ? undefined : v), z.enum(['upload', 'link']).optional()),
+    uploadPath: optionalText,
+    uploadName: optionalText,
   })
   .refine((v) => !v.expiryDate || !v.effectiveDate || v.expiryDate >= v.effectiveDate, {
     message: 'tanggal kedaluwarsa harus sama atau setelah tanggal berlaku',
@@ -225,13 +253,55 @@ export const DocumentInput = z
 
 type ParsedInput = z.infer<typeof DocumentInput>
 
-function resolveExternal(data: ParsedInput) {
-  if (!data.externalUrl) return { externalUrl: null, externalResourceId: null }
-  const id = parseDriveFileId(data.externalUrl)
-  if (!id) throw new ServiceError('VALIDATION', 'externalUrl: bukan tautan/ID Google Drive yang dikenali')
-  const isUrl = /^https:\/\//.test(data.externalUrl)
-  return { externalUrl: isUrl ? data.externalUrl : `https://drive.google.com/file/d/${id}/view`, externalResourceId: id }
+interface ResolvedFile {
+  provider: ExternalProvider
+  externalUrl: string | null
+  externalResourceId: string | null
+  mimeType: string | null
+  fileName: string | null
+  fileSize: number | null
 }
+
+const NO_FILE: ResolvedFile = { provider: 'GOOGLE_DRIVE', externalUrl: null, externalResourceId: null, mimeType: null, fileName: null, fileSize: null }
+
+function resolveDriveLink(url: string | null | undefined): ResolvedFile {
+  if (!url) return NO_FILE
+  const id = parseDriveFileId(url)
+  if (!id) throw new ServiceError('VALIDATION', 'externalUrl: bukan tautan/ID Google Drive yang dikenali')
+  const isUrl = /^https:\/\//.test(url)
+  return { ...NO_FILE, externalUrl: isUrl ? url : `https://drive.google.com/file/d/${id}/view`, externalResourceId: id }
+}
+
+/**
+ * Menentukan berkas dokumen dari input.
+ * - upload + uploadPath → berkas baru di penyimpanan CSSE (diverifikasi milik user & benar-benar ada)
+ * - upload tanpa berkas baru → berkas unggahan lama dipertahankan (saat ubah metadata)
+ * - link → tautan Drive (kosong = tanpa berkas)
+ * - fileSource kosong (klien API lama) → ditebak; dokumen unggahan tidak kehilangan berkas hanya karena externalUrl kosong
+ */
+async function resolveFile(ctx: IdentityContext, data: ParsedInput, existing?: DocumentRow): Promise<ResolvedFile> {
+  const keepUpload = (): ResolvedFile | null =>
+    existing?.external_provider === 'CSSE_STORAGE' && existing.external_resource_id
+      ? {
+          provider: 'CSSE_STORAGE', externalUrl: null, externalResourceId: existing.external_resource_id,
+          mimeType: existing.external_mime_type ?? null, fileName: existing.file_name ?? null,
+          fileSize: existing.file_size == null ? null : Number(existing.file_size),
+        }
+      : null
+  const source = data.fileSource ?? (data.uploadPath ? 'upload' : data.externalUrl ? 'link' : null)
+  if (source === 'upload') {
+    if (data.uploadPath) {
+      const f = await verifyUploadedFile(ctx, data.uploadPath, data.uploadName)
+      return { provider: 'CSSE_STORAGE', externalUrl: null, externalResourceId: f.path, mimeType: f.mimeType, fileName: f.fileName, fileSize: f.size }
+    }
+    return keepUpload() ?? NO_FILE
+  }
+  if (source === 'link') return resolveDriveLink(data.externalUrl)
+  return keepUpload() ?? NO_FILE
+}
+
+const describeFile = (f: { provider: string; externalResourceId: string | null; fileName: string | null }) =>
+  !f.externalResourceId ? null : f.provider === 'CSSE_STORAGE' ? `Unggahan: ${f.fileName ?? 'berkas'}` : 'Tautan Google Drive'
 
 async function assertRefs(q: Sql | Tx, data: ParsedInput) {
   if (data.categoryId && !(await q`select 1 from categories where category_id = ${data.categoryId}`).length)
@@ -240,6 +310,17 @@ async function assertRefs(q: Sql | Tx, data: ParsedInput) {
     throw new ServiceError('VALIDATION', 'divisionId: divisi tidak ditemukan')
   if (data.picUserId && !(await q`select 1 from users where user_id = ${data.picUserId} and status <> 'DEACTIVATED'`).length)
     throw new ServiceError('VALIDATION', 'picUserId: user tidak ditemukan')
+}
+
+/** Satu berkas unggahan hanya untuk satu dokumen (unique index provider+resource). */
+async function uniqueFile<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch (e) {
+    if ((e as { code?: string }).code === '23505' && String((e as { constraint_name?: string }).constraint_name ?? '').includes('documents_external_uq'))
+      throw new ServiceError('CONFLICT', 'Berkas ini sudah dipakai oleh dokumen lain. Unggah ulang berkasnya.')
+    throw e
+  }
 }
 
 async function duplicateMessage(q: Sql | Tx, externalResourceId: string) {
@@ -261,24 +342,29 @@ export async function createDocumentRecord(ctx: IdentityContext, input: unknown)
   // Division User yang mendaftarkan tanpa PIC menjadi PIC-nya sendiri (agar tetap bisa membuka dokumennya).
   if (!data.picUserId && ctx.roleId === 'DIVISION_USER') data.picUserId = ctx.userId
   await assertRefs(db(), data)
-  const ext = resolveExternal(data)
-  if (ext.externalResourceId) {
+  const ext = await resolveFile(ctx, data)
+  if (ext.provider === 'GOOGLE_DRIVE' && ext.externalResourceId) {
     const dup = await duplicateMessage(db(), ext.externalResourceId)
     if (dup) throw new ServiceError('CONFLICT', dup)
   }
-  const created = await db().begin(async (tx) => {
+  const created = await uniqueFile(() => db().begin(async (tx) => {
     const [row] = await tx<{ document_id: string }[]>`
-      insert into documents (external_resource_id, external_url, document_name, document_number, category_id, division_id,
+      insert into documents (external_provider, external_resource_id, external_url, external_mime_type, file_name, file_size,
+        document_name, document_number, category_id, division_id,
         security_level, owner_user_id, pic_user_id, status, effective_date, expiry_date, confirmed_summary, created_by)
-      values (${ext.externalResourceId}, ${ext.externalUrl}, ${data.documentName}, ${data.documentNumber}, ${data.categoryId}, ${divisionId},
+      values (${ext.provider}, ${ext.externalResourceId}, ${ext.externalUrl}, ${ext.mimeType}, ${ext.fileName}, ${ext.fileSize},
+        ${data.documentName}, ${data.documentNumber}, ${data.categoryId}, ${divisionId},
         ${data.securityLevel}, ${ctx.userId}, ${data.picUserId}, 'ACTIVE', ${data.effectiveDate}, ${data.expiryDate}, ${data.confirmedSummary}, ${ctx.userId})
       returning document_id`
     await auditAs(ctx, {
       action: 'DOCUMENT_CREATED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'SUCCESS',
-      metadata: { documentName: data.documentName, securityLevel: data.securityLevel, via: 'MANUAL' },
+      metadata: {
+        documentName: data.documentName, securityLevel: data.securityLevel, via: 'MANUAL',
+        file: ext.provider === 'CSSE_STORAGE' ? { source: 'UPLOAD', size: ext.fileSize, mimeType: ext.mimeType } : ext.externalResourceId ? { source: 'DRIVE_LINK' } : null,
+      },
     }, tx)
     return row.document_id
-  })
+  }))
   if (data.supersedesDocumentId) await supersedeDocument(ctx, created, data.supersedesDocumentId)
   const row = (await loadDocumentRow(db(), created))!
   return secureDocumentDto(ctx, row, await loadGrants(db(), created))
@@ -309,7 +395,7 @@ export async function getDocumentMetadata(ctx: IdentityContext, documentId: unkn
       canEdit: decide(ctx, f, 'EDIT_METADATA', grants).allowed,
       canArchive: decide(ctx, f, 'ARCHIVE', grants).allowed,
       canManage: decide(ctx, f, 'MANAGE_PERMISSION', grants).allowed,
-      openMode: openMode(f),
+      openMode: docOpenMode(row),
       canRequestAccess: open.requestable && row.status === 'ACTIVE',
       approver: open.requestable ? approverFor(f) : null,
       denyReason: open.allowed ? null : open.reason,
@@ -364,11 +450,13 @@ export async function updateDocumentMetadata(ctx: IdentityContext, documentId: u
   }
   const data = parseInput(DocumentInput, input)
   await assertRefs(db(), data)
-  const ext = resolveExternal(data)
-  if (ext.externalResourceId && ext.externalResourceId !== row.external_resource_id) {
+  const ext = await resolveFile(ctx, data, row)
+  if (ext.provider === 'GOOGLE_DRIVE' && ext.externalResourceId && ext.externalResourceId !== row.external_resource_id) {
     const dup = await duplicateMessage(db(), ext.externalResourceId)
     if (dup) throw new ServiceError('CONFLICT', dup)
   }
+  // Jenis file Drive (diisi scan) dipertahankan bila tautannya sama.
+  const mimeType = ext.provider === 'GOOGLE_DRIVE' && ext.externalResourceId === row.external_resource_id ? row.external_mime_type ?? null : ext.mimeType
   const next: Record<string, unknown> = { ...data, externalUrl: ext.externalUrl, divisionId: data.divisionId ?? row.division_id }
   if (next.divisionId !== row.division_id && !canCreateIn(ctx, next.divisionId as string | null)) {
     return deny(ctx, row.document_id, 'DOCUMENT_MOVED_DIVISION', 'Anda tidak dapat memindahkan dokumen ke divisi lain.')
@@ -379,16 +467,24 @@ export async function updateDocumentMetadata(ctx: IdentityContext, documentId: u
     const after = next[key] ?? null
     if (before !== after) changes[key] = { from: before, to: after }
   }
-  await db().begin(async (tx) => {
+  if (ext.provider !== row.external_provider || ext.externalResourceId !== row.external_resource_id) {
+    changes.file = {
+      from: describeFile({ provider: row.external_provider, externalResourceId: row.external_resource_id, fileName: row.file_name ?? null }),
+      to: describeFile(ext),
+    }
+  }
+  await uniqueFile(() => db().begin(async (tx) => {
     await tx`
       update documents set document_name = ${data.documentName}, document_number = ${data.documentNumber},
         category_id = ${data.categoryId}, division_id = ${next.divisionId as string | null}, pic_user_id = ${data.picUserId},
-        external_url = ${ext.externalUrl}, external_resource_id = ${ext.externalResourceId},
+        external_provider = ${ext.provider}, external_url = ${ext.externalUrl}, external_resource_id = ${ext.externalResourceId},
+        external_mime_type = ${mimeType}, file_name = ${ext.fileName}, file_size = ${ext.fileSize},
+        flag_source_missing = ${ext.externalResourceId === row.external_resource_id ? row.flag_source_missing : false},
         effective_date = ${data.effectiveDate}, expiry_date = ${data.expiryDate}, confirmed_summary = ${data.confirmedSummary},
         updated_at = now()
       where document_id = ${row.document_id}`
     await auditAs(ctx, { action: 'DOCUMENT_UPDATED', resourceType: 'DOCUMENT', resourceId: row.document_id, result: 'SUCCESS', metadata: { changes } }, tx)
-  })
+  }))
   return secureDocumentDto(ctx, (await loadDocumentRow(db(), row.document_id))!, grants)
 }
 

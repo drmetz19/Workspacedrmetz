@@ -23,7 +23,7 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
           <h1>{renewOf ? 'Perpanjang / versi baru' : 'Daftarkan dokumen'}</h1>
           <p>{renewOf
             ? `Daftarkan versi baru untuk "${renewOf.documentName}" (v${renewOf.version}). Versi lama otomatis ditandai tidak berlaku.`
-            : 'Catat dokumen yang sudah ada di Google Drive ke registry CSSE.'}</p>
+            : 'Unggah berkasnya langsung, atau tautkan dari Google Drive — lalu lengkapi metadata.'}</p>
         </div>
       </div>
       <DocumentForm
