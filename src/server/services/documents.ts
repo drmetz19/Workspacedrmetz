@@ -242,6 +242,20 @@ async function assertRefs(q: Sql | Tx, data: ParsedInput) {
     throw new ServiceError('VALIDATION', 'picUserId: user tidak ditemukan')
 }
 
+/**
+ * PIC ikut menentukan siapa yang "boleh tahu" dokumen L1–4. Agar Division User tidak
+ * (sengaja) membuka dokumen divisinya ke staf divisi lain, PIC yang ia pilih harus
+ * berasal dari divisi dokumen (atau Owner/GM). Owner/GM tetap bebas memilih PIC.
+ */
+async function assertPicAllowed(q: Sql | Tx, ctx: IdentityContext, picUserId: string | null | undefined, divisionId: string | null) {
+  if (!picUserId || ctx.roleId === 'OWNER' || ctx.roleId === 'GM') return
+  const [pic] = await q<{ division_id: string | null; role_id: string }[]>`select division_id, role_id from users where user_id = ${picUserId}`
+  if (!pic) throw new ServiceError('VALIDATION', 'picUserId: user tidak ditemukan')
+  if (pic.role_id === 'OWNER' || pic.role_id === 'GM') return
+  if (!divisionId || pic.division_id !== divisionId)
+    throw new ServiceError('VALIDATION', 'picUserId: PIC harus staf dari divisi dokumen ini (atau Owner/GM).')
+}
+
 async function duplicateMessage(q: Sql | Tx, externalResourceId: string) {
   const [dup] = await q<{ document_name: string }[]>`select document_name from documents where external_provider = 'GOOGLE_DRIVE' and external_resource_id = ${externalResourceId}`
   return dup ? `File Drive ini sudah terdaftar sebagai "${dup.document_name}".` : null
@@ -261,6 +275,7 @@ export async function createDocumentRecord(ctx: IdentityContext, input: unknown)
   // Division User yang mendaftarkan tanpa PIC menjadi PIC-nya sendiri (agar tetap bisa membuka dokumennya).
   if (!data.picUserId && ctx.roleId === 'DIVISION_USER') data.picUserId = ctx.userId
   await assertRefs(db(), data)
+  await assertPicAllowed(db(), ctx, data.picUserId, divisionId)
   const ext = resolveExternal(data)
   if (ext.externalResourceId) {
     const dup = await duplicateMessage(db(), ext.externalResourceId)
@@ -373,6 +388,9 @@ export async function updateDocumentMetadata(ctx: IdentityContext, documentId: u
   if (next.divisionId !== row.division_id && !canCreateIn(ctx, next.divisionId as string | null)) {
     return deny(ctx, row.document_id, 'DOCUMENT_MOVED_DIVISION', 'Anda tidak dapat memindahkan dokumen ke divisi lain.')
   }
+  // Hanya diperiksa bila PIC atau divisi berubah, supaya dokumen lama tetap bisa diedit.
+  if ((data.picUserId ?? null) !== row.pic_user_id || next.divisionId !== row.division_id)
+    await assertPicAllowed(db(), ctx, data.picUserId, next.divisionId as string | null)
   const changes: Record<string, { from: unknown; to: unknown }> = {}
   for (const [key, col] of TRACKED) {
     const before = row[col] ?? null
@@ -453,10 +471,14 @@ export async function listDocuments(ctx: IdentityContext, opts: ListOptions): Pr
 }
 
 // ── Direktori user untuk pilihan PIC ───────────────────────────────────
-export async function listUserOptions(_ctx: IdentityContext) {
+/** Pilihan PIC. Division User hanya melihat rekan divisinya + Owner/GM (sejalan dengan assertPicAllowed). */
+export async function listUserOptions(ctx: IdentityContext) {
+  const scoped = ctx.roleId === 'DIVISION_USER'
   return db()<{ user_id: string; name: string; email: string; division_name: string | null }[]>`
     select u.user_id, u.name, u.email, d.division_name from users u left join divisions d on d.division_id = u.division_id
-    where u.status <> 'DEACTIVATED' order by u.name`
+    where u.status <> 'DEACTIVATED'
+      and ${scoped ? db()`(u.role_id in ('OWNER','GM') or u.division_id = ${ctx.divisionId})` : db()`true`}
+    order by u.name`
 }
 
 // ── Direktori: jumlah dokumen aktif per divisi (dalam scope izin) ─────

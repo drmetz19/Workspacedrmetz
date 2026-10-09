@@ -48,6 +48,7 @@ export function DocumentForm({ action, doc, categories, divisions, users, replac
             <option value="">— Belum ditentukan —</option>
             {users.map((u) => <option key={u.user_id} value={u.user_id}>{u.name}{u.division_name ? ` · ${u.division_name}` : ''}</option>)}
           </select>
+          <div className="field-hint">PIC ikut bisa melihat dokumen ini. Pilih staf dari divisi dokumen.</div>
         </div>
         {!doc && (
           <div className="field">
@@ -59,12 +60,13 @@ export function DocumentForm({ action, doc, categories, divisions, users, replac
           </div>
         )}
         <div className="field">
-          <label htmlFor="effectiveDate">Tanggal berlaku</label>
+          <label htmlFor="effectiveDate">Mulai berlaku (tanggal terbit)</label>
           <input id="effectiveDate" name="effectiveDate" type="date" defaultValue={doc?.effectiveDate ?? ''} />
         </div>
         <div className="field">
-          <label htmlFor="expiryDate">Tanggal kedaluwarsa</label>
+          <label htmlFor="expiryDate">Berlaku sampai (kedaluwarsa)</label>
           <input id="expiryDate" name="expiryDate" type="date" defaultValue={doc?.expiryDate ?? ''} />
+          <div className="field-hint">Isi untuk izin, SIP, STR, kontrak, MoU, sewa &amp; sertifikat — tanggal inilah yang memicu peringatan &ldquo;Akan kedaluwarsa&rdquo;.</div>
         </div>
       </div>
       <div className="field">

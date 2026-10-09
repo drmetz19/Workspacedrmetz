@@ -90,12 +90,12 @@ export default async function ReviewDraftPage({ params, searchParams }: { params
             <Hint value={s.securityLevel ? `L${s.securityLevel}` : null} />
           </div>
           <div className="field">
-            <label htmlFor="effectiveDate">Tanggal berlaku</label>
+            <label htmlFor="effectiveDate">Mulai berlaku (tanggal terbit)</label>
             <input id="effectiveDate" name="effectiveDate" type="date" defaultValue={d.effectiveDate ?? s.effectiveDate ?? ''} />
             <Hint value={s.effectiveDate} />
           </div>
           <div className="field">
-            <label htmlFor="expiryDate">Tanggal kedaluwarsa</label>
+            <label htmlFor="expiryDate">Berlaku sampai (kedaluwarsa)</label>
             <input id="expiryDate" name="expiryDate" type="date" defaultValue={d.expiryDate ?? s.expiryDate ?? ''} />
             <Hint value={s.expiryDate} />
           </div>

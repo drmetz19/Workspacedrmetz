@@ -262,3 +262,20 @@ Halaman `/search/ask` sesuai mockup: layout chat, chip rekomendasi, kartu "Ditem
 - [x] Tombol buka memakai jalur CSSE (diaudit); dokumen yang belum boleh dibuka → nomor disembunyikan + Minta akses
 - [x] Riwayat chat hanya pertanyaan milik sendiri; Percakapan Baru mengosongkan percakapan
 - [x] Umpan balik tercatat di audit; panel divisi sumber data sesuai izin
+
+---
+
+## Phase 18: PIC sedivisi + label masa berlaku
+**User stories**: 24, 28 (perbaikan dari uji produksi 9 Okt 2026)
+
+### What to build
+Division User hanya boleh memasang PIC dari divisi dokumen atau Owner/GM (server + dropdown). Owner/GM bebas. Pemeriksaan saat update hanya bila PIC/divisi berubah. Label form tanggal diperjelas.
+
+### Acceptance criteria
+- [x] Division User memasang PIC divisi lain → VALIDATION, dokumen tidak tersimpan
+- [x] PIC rekan divisi / Owner / GM diterima; Owner bebas lintas divisi
+- [x] Ganti PIC ke divisi lain lewat edit ditolak; edit lain pada dokumen lama tetap jalan
+- [x] Dropdown PIC Division User hanya rekan divisi + Owner/GM
+- [x] Label "Mulai berlaku (tanggal terbit)" / "Berlaku sampai (kedaluwarsa)" + petunjuk
+- [x] typecheck, 168/168 test, build lolos
+
