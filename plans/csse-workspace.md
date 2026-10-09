@@ -262,3 +262,19 @@ Halaman `/search/ask` sesuai mockup: layout chat, chip rekomendasi, kartu "Ditem
 - [x] Tombol buka memakai jalur CSSE (diaudit); dokumen yang belum boleh dibuka → nomor disembunyikan + Minta akses
 - [x] Riwayat chat hanya pertanyaan milik sendiri; Percakapan Baru mengosongkan percakapan
 - [x] Umpan balik tercatat di audit; panel divisi sumber data sesuai izin
+
+---
+
+## Phase 17: Notulensi Rapat & Tindak Lanjut
+**Di luar PRD pilot** (permintaan Owner)
+
+### What to build
+Pencatatan notulensi rapat per divisi (judul, tanggal, jenis, peserta, ringkasan, tautan Drive, status, PIC) dan tindak lanjut (to-do) dengan PIC, tenggat, dan status BELUM_MULAI/BERJALAN/SELESAI. Halaman `/meetings` (daftar + kartu statistik + panel to-do), `/meetings/new`, `/meetings/[id]` (detail + tambah tindak lanjut). Panel ringkasan di Command Center. Division User hanya melihat/mengelola divisinya (service + RLS). Semua aksi diaudit.
+
+### Acceptance criteria
+- [x] Staf membuat notulensi divisinya; membuat untuk divisi lain ditolak dan diaudit
+- [x] Daftar, detail, dan API `/api/meetings` dibatasi divisi (Owner/GM semua divisi)
+- [x] Tindak lanjut dari notulensi mewarisi divisinya; submit tetap di halaman detail notulensi
+- [x] Ubah status tercatat (`ACTION_ITEM_STATUS_CHANGED`); SELESAI mengisi `completed_at`, dibuka lagi mengosongkannya
+- [x] Statistik: tindak lanjut aktif, jatuh tempo ≤7 hari, notulensi bulan ini, tingkat kepatuhan
+- [x] Command Center menampilkan panel Notulensi Rapat & Tindak Lanjut

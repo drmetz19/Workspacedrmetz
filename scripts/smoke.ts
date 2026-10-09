@@ -22,6 +22,7 @@ const PHASES: Record<number, string> = {
   14: 'Email Gmail SMTP',
   15: 'Direktori Dokumen Divisi',
   16: 'Tanya Dokumen (chat)',
+  17: 'Notulensi Rapat & Tindak Lanjut',
 }
 
 async function main() {

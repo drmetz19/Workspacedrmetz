@@ -1,8 +1,8 @@
 # Dr. Metz Workspace — CSSE
 
-Mini app **document governance** untuk pilot Legal/Perizinan: registry dokumen di atas Google Drive, izin per level L1–5, permintaan akses, pencarian filter & Ask AI, Command Center, dan audit append-only.
+Mini app **document governance** untuk pilot Legal/Perizinan: registry dokumen di atas Google Drive, izin per level L1–5, permintaan akses, pencarian filter & Ask AI, Command Center, notulensi rapat & tindak lanjut, dan audit append-only.
 
-- PRD MVP: `plans/prd-csse-workspace.md` · Plan 12 fase: `plans/csse-workspace.md` · PRD fondasi: `plans/PRD_foundation_v0.2.md`
+- PRD MVP: `plans/prd-csse-workspace.md` · Plan 17 fase: `plans/csse-workspace.md` · PRD fondasi: `plans/PRD_foundation_v0.2.md`
 - Go-live: `SETUP-PRODUKSI.md`
 
 ## Arsitektur singkat
@@ -29,7 +29,7 @@ Mode mock Drive: isi tabel `dev_drive_files` (container_id = ID folder diawali `
 ## Pengujian
 ```bash
 pnpm typecheck
-pnpm test                 # 149 test integrasi (DB csse_test dibuat ulang otomatis)
-pnpm build && pnpm smoke  # smoke end-to-end 12 fase terhadap build produksi (DB csse_smoke)
+pnpm test                 # 172 test integrasi (DB csse_test dibuat ulang otomatis)
+pnpm build && pnpm smoke  # smoke end-to-end 17 fase terhadap build produksi (DB csse_smoke)
 pnpm smoke 4,9            # fase tertentu
 ```

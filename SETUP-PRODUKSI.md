@@ -1,6 +1,6 @@
 # Setup produksi — yang dibutuhkan dari Owner
 
-Semua 12 fase MVP sudah jalan & teruji secara lokal (Postgres 16 + adapter `local` / `mock`).
+Semua 17 fase (16 fase MVP + Notulensi Rapat) sudah jalan & teruji secara lokal (Postgres 16 + adapter `local` / `mock`).
 Untuk go-live, isi variabel berikut di Vercel (Project → Settings → Environment Variables).
 
 ## 1. Supabase (database + login) — **D3**
@@ -44,3 +44,6 @@ Tidak perlu akun service.
 - [ ] Daftarkan dokumen dengan tautan Drive asli → buka sebagai user berwenang (Drive mengizinkan) & tidak berwenang (CSSE menolak)
 - [ ] Undang staf → email undangan masuk dari projectcuan15@gmail.com
 - [ ] Ask AI dengan provider Anthropic
+
+## Catatan migrasi
+- Migrasi `0011_meeting_minutes.sql` sudah diterapkan di Supabase produksi dan tercatat di `schema_migrations` (11/11). Migrasi berikutnya cukup `DATABASE_URL=… pnpm db:migrate`; jangan jalankan DDL manual lewat SQL Editor tanpa mencatatnya di `schema_migrations`.
