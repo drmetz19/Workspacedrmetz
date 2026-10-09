@@ -1,6 +1,9 @@
 import type { DocumentDetail } from '@/server/services/documents'
 import type { AccessRequestDto } from '@/server/services/access'
+import Link from 'next/link'
 import { fmtDateTime } from '@/lib/labels'
+import { formatBytes } from '@/lib/upload-types'
+import { Icon } from './Icon'
 
 const APPROVER = { GM: 'GM atau Owner', OWNER: 'Owner' } as const
 
@@ -8,6 +11,26 @@ const APPROVER = { GM: 'GM atau Owner', OWNER: 'Owner' } as const
 export function OpenPanel({ doc, myRequest }: { doc: DocumentDetail; myRequest?: AccessRequestDto | null }) {
   const p = doc.permissions
   if (doc.status === 'DRAFT') return null
+  if (p.canOpen && doc.fileSource === 'UPLOAD') {
+    return (
+      <div className="card row" id="open">
+        <span className="file-ico"><Icon name={doc.fileMimeType?.startsWith('image/') ? 'image' : doc.fileMimeType === 'application/pdf' ? 'picture_as_pdf' : 'description'} size={20} /></span>
+        <div style={{ minWidth: 0 }}>
+          <strong className="ellipsis">{doc.fileName ?? 'Berkas dokumen'}</strong>
+          <div className="small muted">
+            {[formatBytes(doc.fileSize), 'Diunggah ke CSSE', `Level ${doc.securityLevel}`].filter(Boolean).join(' · ')} — setiap pembukaan dicatat di audit.
+          </div>
+        </div>
+        <span className="spacer" />
+        <a className="btn btn-primary" href={`/api/files/${doc.documentId}`} target="_blank" rel="noreferrer"><Icon name="visibility" /> Buka berkas</a>
+        <a className="btn" href={`/api/files/${doc.documentId}?download=1`}><Icon name="download" /> Unduh</a>
+        {myRequest?.status === 'APPROVED' && <div className="small muted" style={{ flexBasis: '100%' }}>Akses sementara berlaku s.d. {fmtDateTime(myRequest.expiresAt)}</div>}
+      </div>
+    )
+  }
+  if (p.canOpen && !doc.hasFile) {
+    return <div className="card small muted">Belum ada berkas untuk dokumen ini. {p.canEdit && <Link href={`/documents/${doc.documentId}/edit`}>Unggah berkas atau tambahkan tautan Drive</Link>}</div>
+  }
   if (p.canOpen && p.openMode === 'DRIVE') {
     return doc.externalUrl ? (
       <div className="card row">

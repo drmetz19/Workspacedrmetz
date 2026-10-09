@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getAuthorizedDocument } from '@/server/services/files'
+import { openDocumentFile } from '@/server/services/files'
 import { errorResponse, userFromRequest, wantsJson } from '@/server/http'
 
 function contentDisposition(kind: 'inline' | 'attachment', name: string) {
@@ -7,16 +7,23 @@ function contentDisposition(kind: 'inline' | 'attachment', name: string) {
   return `${kind}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`
 }
 
-/** Proxy file dokumen: GET /api/files/{documentId}[?download=1] */
+/**
+ * Buka berkas dokumen: GET /api/files/{documentId}[?download=1]
+ * Izin diperiksa & diaudit di service. Berkas unggahan → redirect ke URL bertanda tangan 60 detik;
+ * mode tautan → redirect ke Google Drive; mode akun service → file disajikan langsung (proxy).
+ */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = await params
-  if (process.env.DRIVE_PROVIDER === 'link') {
-    // Mode tautan: tidak ada proxy — arahkan ke jalur tautan Drive (tetap diperiksa izin + diaudit).
-    return NextResponse.redirect(new URL(`/api/documents/${encodeURIComponent(documentId)}/open-drive`, req.url), 303)
-  }
   try {
     const ctx = await userFromRequest(req)
-    const file = await getAuthorizedDocument(ctx, documentId, { download: req.nextUrl.searchParams.get('download') === '1' })
+    const res = await openDocumentFile(ctx, documentId, { download: req.nextUrl.searchParams.get('download') === '1' })
+    if (res.kind === 'redirect') {
+      const r = NextResponse.redirect(res.url, 303)
+      r.headers.set('Cache-Control', 'private, no-store, max-age=0')
+      r.headers.set('Referrer-Policy', 'no-referrer')
+      return r
+    }
+    const file = res.file
     return new NextResponse(Buffer.from(file.data), {
       status: 200,
       headers: {

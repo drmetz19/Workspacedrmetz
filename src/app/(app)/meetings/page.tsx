@@ -20,13 +20,14 @@ const STATUS_OPTIONS = [
   { key: 'SELESAI', label: 'Selesai' },
 ] as const
 
-function TodoItem({ item }: { item: ActionItemDto }) {
+function TodoItem({ item, returnTo }: { item: ActionItemDto; returnTo: string }) {
   const done = item.status === 'SELESAI'
   const days = daysUntil(item.dueDate)
   return (
     <div className={`todo-item${done ? ' done' : ''}`}>
       <form action={`/api/action-items/${item.actionItemId}/status`} method="post">
         <input type="hidden" name="status" value={done ? 'BELUM_MULAI' : 'SELESAI'} />
+        <input type="hidden" name="returnTo" value={returnTo} />
         <button type="submit" className="todo-check" title={done ? 'Tandai belum selesai' : 'Tandai selesai'}>
           <Icon name="check" size={13} />
         </button>
@@ -63,6 +64,8 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Sea
     listUserOptions(user),
   ])
   const visibleDivisions = user.roleId === 'DIVISION_USER' ? divisions.filter((d) => d.divisionId === user.divisionId) : divisions
+  const currentQuery = new URLSearchParams({ ...(divisionId ? { division: divisionId } : {}), ...(statusKey !== 'OPEN' ? { status: statusKey } : {}) }).toString()
+  const currentPath = `/meetings${currentQuery ? `?${currentQuery}` : ''}`
 
   const tabHref = (over: Record<string, string | null>) => {
     const p = new URLSearchParams()
@@ -189,9 +192,17 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Sea
               <span className="spacer" />
               <span className="small muted">{todos.length} Tugas</span>
             </form>
-            {todos.length === 0 ? <div className="empty">Tidak ada tindak lanjut untuk filter ini.</div> : todos.map((t) => <TodoItem key={t.actionItemId} item={t} />)}
+            {todos.length === 0 ? <div className="empty">Tidak ada tindak lanjut untuk filter ini.</div> : todos.map((t) => <TodoItem key={t.actionItemId} item={t} returnTo={currentPath} />)}
             <form className="todo-add" action="/api/action-items" method="post">
-              {divisionId ? <input type="hidden" name="divisionId" value={divisionId} /> : <input type="hidden" name="divisionId" value={user.divisionId ?? visibleDivisions[0]?.divisionId ?? ''} />}
+              <input type="hidden" name="returnTo" value={currentPath} />
+              {divisionId || user.roleId === 'DIVISION_USER' ? (
+                <input type="hidden" name="divisionId" value={divisionId ?? user.divisionId ?? ''} />
+              ) : (
+                <select name="divisionId" required defaultValue="" aria-label="Divisi tindak lanjut" style={{ fontSize: 12.5 }}>
+                  <option value="" disabled>Divisi…</option>
+                  {visibleDivisions.map((v) => <option key={v.divisionId} value={v.divisionId}>{v.divisionName}</option>)}
+                </select>
+              )}
               <input name="description" placeholder="+ Tambahkan tindak lanjut baru…" required minLength={3} style={{ fontSize: 12.5 }} />
               <button className="btn btn-sm btn-primary" type="submit">Simpan</button>
             </form>

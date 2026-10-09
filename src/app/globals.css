@@ -392,3 +392,24 @@ dl.meta dd { margin: 0; }
   .meet-grid { grid-template-columns: 1fr; }
   .todo-panel { position: static; }
 }
+
+/* ── Phase 18: sumber berkas dokumen (unggah / tautan Drive) ───────── */
+.src-toggle { display: inline-flex; gap: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-lg); padding: 3px; background: var(--surface-2); margin-bottom: 10px; flex-wrap: wrap; }
+.src-opt { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; user-select: none; }
+.src-opt input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.src-opt:hover { color: var(--ink); }
+.src-opt.active { background: var(--surface); color: var(--navy); box-shadow: var(--shadow-raised); }
+.src-opt:has(input:focus-visible) { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.upload-drop { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1.5px dashed var(--sky-line); border-radius: var(--radius-lg); background: var(--sky-soft); color: var(--sky-ink); cursor: pointer; position: relative; transition: border-color .15s, background .15s; }
+.upload-drop:hover { border-color: var(--sky); }
+.upload-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.upload-drop.busy { cursor: progress; }
+.upload-drop.ok { border-style: solid; border-color: var(--ok-line); background: var(--ok-soft); color: var(--ok-ink); }
+.upload-drop.bad { border-color: var(--danger-line); background: var(--danger-soft); color: var(--danger-ink); }
+.upload-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.upload-text strong { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-bar { height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 8px; }
+.upload-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--sky), var(--cyan)); transition: width .2s; }
+.field-error { margin-top: 6px; font-size: 12px; color: var(--danger-ink); background: var(--danger-soft); border: 1px solid var(--danger-line); border-radius: var(--radius); padding: 6px 10px; }
+.file-ico { width: 38px; height: 38px; border-radius: var(--radius-lg); background: var(--sky-soft); color: var(--sky); display: grid; place-items: center; flex-shrink: 0; }
+.ellipsis { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

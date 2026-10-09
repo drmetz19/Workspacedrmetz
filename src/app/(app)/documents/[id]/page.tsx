@@ -11,6 +11,7 @@ import { Flash } from '@/components/Flash'
 import { AccessDenied } from '@/components/AccessDenied'
 import { ExpiryBadge, LevelBadge, StatusBadge } from '@/components/Badges'
 import { fmtDate, fmtDateTime } from '@/lib/labels'
+import { formatBytes } from '@/lib/upload-types'
 import { ACTION_LABEL, FIELD_LABEL, describePermissionChange } from '@/lib/history-labels'
 
 export default async function DocumentDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
@@ -73,7 +74,9 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
             <dt>Tanggal berlaku</dt><dd>{fmtDate(d.effectiveDate)}</dd>
             <dt>Kedaluwarsa</dt><dd><ExpiryBadge date={d.expiryDate} /></dd>
             <dt>ID dokumen</dt><dd className="mono">{d.documentId}</dd>
-            {d.externalResourceId && <><dt>File Drive</dt><dd className="mono">{d.externalResourceId}</dd></>}
+            {d.fileSource === 'UPLOAD'
+              ? d.fileName && <><dt>Berkas</dt><dd>{d.fileName}{d.fileSize ? ` · ${formatBytes(d.fileSize)}` : ''} <span className="badge badge-sky">Unggahan</span></dd></>
+              : d.externalResourceId && <><dt>File Drive</dt><dd className="mono">{d.externalResourceId}</dd></>}
             {d.ownerApprovalRequired && <><dt>Persetujuan</dt><dd><span className="badge badge-warn">Wajib persetujuan Owner</span></dd></>}
           </dl>
           {d.confirmedSummary && (

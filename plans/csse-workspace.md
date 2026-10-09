@@ -279,3 +279,17 @@ Division User hanya boleh memasang PIC dari divisi dokumen atau Owner/GM (server
 - [x] Label "Mulai berlaku (tanggal terbit)" / "Berlaku sampai (kedaluwarsa)" + petunjuk
 - [x] typecheck, 168/168 test, build lolos
 
+---
+
+## Phase 19: Unggah berkas dokumen
+**User stories**: 52 (diperluas: sumber berkas = tautan Drive ATAU unggahan)
+
+### What to build
+Form dokumen punya pilihan sumber berkas: tautan Google Drive atau unggah berkas. Berkas masuk bucket privat `csse-documents` (tanpa policy anon/authenticated). Buka/unduh lewat CSSE dengan izin + audit, lalu URL bertanda tangan 60 detik.
+
+### Acceptance criteria
+- [x] Migrasi 0012 diterapkan di production (constraint provider, kolom file_name/file_size, bucket privat 25 MB, 8 tipe)
+- [x] Path unggahan wajib milik pengunggah; jenis & ukuran diverifikasi dari storage, bukan klaim browser
+- [x] Satu berkas hanya untuk satu dokumen; user tanpa izin ditolak sebelum URL dibuat
+- [x] typecheck, 181/181 test, build lolos
+

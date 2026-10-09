@@ -61,6 +61,7 @@ export const FIELD_LABEL: Record<string, string> = {
   effectiveDate: 'Tgl berlaku',
   expiryDate: 'Tgl kedaluwarsa',
   confirmedSummary: 'Ringkasan',
+  file: 'Berkas',
 }
 
 export function describePermissionChange(m: Record<string, unknown>): string {

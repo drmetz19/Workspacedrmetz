@@ -43,6 +43,7 @@ export interface AskCitation {
   picName: string | null
   canOpen: boolean
   hasFile: boolean
+  fileSource: 'UPLOAD' | 'DRIVE' | null
   openMode: 'DRIVE' | 'CSSE'
 }
 
@@ -122,7 +123,7 @@ export async function askDocuments(ctx: IdentityContext, input: unknown): Promis
     return {
       ref, documentId: d.documentId, documentName: d.documentName, status: d.status, securityLevel: d.securityLevel, version: d.version,
       expiryDate: d.expiryDate, documentNumber: d.documentNumber, effectiveDate: d.effectiveDate, categoryName: d.categoryName,
-      divisionName: d.divisionName, picName: d.picName, canOpen: d.canOpen, hasFile: d.hasFile, openMode: d.openMode,
+      divisionName: d.divisionName, picName: d.picName, canOpen: d.canOpen, hasFile: d.hasFile, fileSource: d.fileSource, openMode: d.openMode,
     }
   })
   await auditAs(ctx, {

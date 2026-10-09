@@ -55,7 +55,7 @@ function OpenButton({ c }: { c: AskCitation }) {
   if (!c.hasFile) return <Link className="btn btn-sm" href={`/documents/${c.documentId}`}>Lihat detail</Link>
   return c.openMode === 'DRIVE'
     ? <a className="btn btn-sm" href={`/api/documents/${c.documentId}/open-drive`} target="_blank" rel="noreferrer"><Icon name="open_in_new" /> Buka di Google Drive</a>
-    : <a className="btn btn-sm" href={`/api/files/${c.documentId}`} target="_blank" rel="noreferrer"><Icon name="lock_open" /> Buka lewat CSSE</a>
+    : <a className="btn btn-sm" href={`/api/files/${c.documentId}`} target="_blank" rel="noreferrer"><Icon name="lock_open" /> {c.fileSource === 'UPLOAD' ? 'Buka berkas' : 'Buka lewat CSSE'}</a>
 }
 
 function FoundCard({ c }: { c: AskCitation }) {
@@ -83,7 +83,7 @@ function FoundCard({ c }: { c: AskCitation }) {
         <span className="file-icon"><Icon name="description" size={18} /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row" style={{ gap: 6 }}><strong className="truncate">{c.documentName}</strong> <LevelBadge level={c.securityLevel} /></div>
-          <div className="small muted">{c.categoryName ?? 'Tanpa kategori'} · v{c.version}{c.hasFile ? ' · tertaut ke Google Drive' : ' · belum ada tautan Drive'}</div>
+          <div className="small muted">{c.categoryName ?? 'Tanpa kategori'} · v{c.version}{c.fileSource === 'UPLOAD' ? ' · berkas diunggah ke CSSE' : c.hasFile ? ' · tertaut ke Google Drive' : ' · belum ada berkas'}</div>
         </div>
         <OpenButton c={c} />
       </div>

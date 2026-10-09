@@ -1,6 +1,7 @@
 import type { DocumentDto } from '@/server/services/documents'
 import type { CategoryDto, DivisionDto } from '@/server/services/org'
 import { LEVEL_NAME } from './Badges'
+import { FileSourceField } from './FileSourceField'
 
 interface Props {
   action: string
@@ -69,11 +70,11 @@ export function DocumentForm({ action, doc, categories, divisions, users, replac
           <div className="field-hint">Isi untuk izin, SIP, STR, kontrak, MoU, sewa &amp; sertifikat — tanggal inilah yang memicu peringatan &ldquo;Akan kedaluwarsa&rdquo;.</div>
         </div>
       </div>
-      <div className="field">
-        <label htmlFor="externalUrl">Tautan Google Drive (file atau folder)</label>
-        <input id="externalUrl" name="externalUrl" defaultValue={doc?.externalUrl ?? ''} placeholder="https://drive.google.com/file/d/… atau …/drive/folders/…" />
-        <div className="field-hint">File tetap berada di Google Drive. Siapa yang bisa membuka file diatur dari tombol &ldquo;Bagikan&rdquo; di Drive — untuk L3–5 bagikan hanya ke orang yang berwenang.</div>
-      </div>
+      <FileSourceField
+        defaultSource={doc?.fileSource === 'DRIVE' ? 'link' : 'upload'}
+        defaultUrl={doc?.externalUrl}
+        existingFile={doc?.fileSource === 'UPLOAD' ? { name: doc.fileName, size: doc.fileSize } : null}
+      />
       <div className="field">
         <label htmlFor="confirmedSummary">Ringkasan singkat</label>
         <textarea id="confirmedSummary" name="confirmedSummary" defaultValue={doc?.confirmedSummary ?? ''} placeholder="Pihak, cakupan, catatan penting" />
