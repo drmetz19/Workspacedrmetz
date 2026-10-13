@@ -12,6 +12,7 @@ export interface UserRow {
   locked_until: Date | null
   last_login_at: Date | null
   drmetz_identity_id: string | null
+  must_change_password: boolean
   created_at: Date
 }
 
@@ -24,6 +25,7 @@ export interface UserDto {
   status: UserRow['status']
   lastLoginAt: Date | null
   drmetzIdentityId: string | null
+  mustChangePassword: boolean
 }
 
 export const toUserDto = (r: UserRow): UserDto => ({
@@ -35,6 +37,7 @@ export const toUserDto = (r: UserRow): UserDto => ({
   status: r.status,
   lastLoginAt: r.last_login_at,
   drmetzIdentityId: r.drmetz_identity_id,
+  mustChangePassword: r.must_change_password,
 })
 
 export async function findUserByEmail(q: Sql | Tx, email: string) {

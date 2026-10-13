@@ -9,6 +9,8 @@ export interface IdentityContext {
   roleId: RoleId
   divisionId: string | null
   source: Source
+  /** Masih memakai password default dari Owner → wajib ganti sebelum memakai aplikasi. */
+  mustChangePassword?: boolean
 }
 
 export const isOwner = (ctx: IdentityContext) => ctx.roleId === 'OWNER'

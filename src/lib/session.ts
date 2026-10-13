@@ -15,6 +15,7 @@ export const currentUser = cache(async (): Promise<IdentityContext | null> => {
 export async function requireUser(): Promise<IdentityContext> {
   const ctx = await currentUser()
   if (!ctx) redirect('/login')
+  if (ctx.mustChangePassword) redirect('/change-password')
   return ctx
 }
 

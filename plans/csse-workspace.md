@@ -293,3 +293,18 @@ Form dokumen punya pilihan sumber berkas: tautan Google Drive atau unggah berkas
 - [x] Satu berkas hanya untuk satu dokumen; user tanpa izin ditolak sebelum URL dibuat
 - [x] typecheck, 181/181 test, build lolos
 
+
+---
+
+## Phase 20: Login akun divisi dengan password default
+**User stories**: 1–3 (disederhanakan: staf langsung masuk email + password tanpa klik tautan undangan)
+
+### What to build
+Owner menambah Division User dengan pilihan "Password default divisi" (pola `<KataPertamaDivisi>@DrMetz2026`, mis. `Finance@DrMetz2026`) atau tautan undangan seperti sebelumnya. Tombol massal mengaktifkan password default untuk semua Division User yang masih berstatus Diundang; tombol per user "Reset ke password default". Karena pola diketahui banyak orang, user wajib membuat password baru saat masuk pertama (halaman `/change-password`; halaman & API lain ditolak `PASSWORD_CHANGE_REQUIRED` sampai diganti). Login form email/password ditaruh paling atas.
+
+### Acceptance criteria
+- [x] Migrasi 0013 (`users.must_change_password`) diterapkan di production
+- [x] Staf baru langsung masuk dengan email + password default, lalu diarahkan ke Buat password baru; password default ditolak sesudahnya
+- [x] Aktivasi massal hanya menyentuh Division User berstatus Diundang yang belum punya password default; Owner/GM tetap Google
+- [x] Reset ke password default mencabut sesi lama; hanya Owner; audit `PASSWORD_DEFAULT_SET` / `PASSWORD_CHANGED`
+- [x] typecheck, 187/187 test, build lolos; smoke fase 1–12 & 16 lolos (3 cek di fase 13–15 sudah gagal sebelum fase ini)

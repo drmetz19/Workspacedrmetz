@@ -41,11 +41,13 @@ export function tokenFromRequest(req: NextRequest | Request): string | null {
   return cookie ?? null
 }
 
-export async function userFromRequest(req: NextRequest): Promise<IdentityContext> {
+export async function userFromRequest(req: NextRequest, opts: { allowMustChangePassword?: boolean } = {}): Promise<IdentityContext> {
   const token = tokenFromRequest(req)
   const viaBearer = req.headers.get('authorization')?.startsWith('Bearer ')
   const ctx = await getSessionUser(token, viaBearer ? 'API' : 'UI')
   if (!ctx) throw new ServiceError('UNAUTHENTICATED', 'Sesi berakhir. Silakan masuk lagi.')
+  if (ctx.mustChangePassword && !opts.allowMustChangePassword)
+    throw new ServiceError('PASSWORD_CHANGE_REQUIRED', 'Ganti password default Anda terlebih dahulu.')
   return ctx
 }
 
@@ -88,6 +90,8 @@ interface HandleOptions<T> {
   onError?: string
   /** Wajib login (default true). */
   auth?: boolean
+  /** Boleh dipanggil user yang masih wajib mengganti password default. */
+  allowMustChangePassword?: boolean
 }
 
 /**
@@ -101,7 +105,7 @@ export function handler<T>(fn: (args: { req: NextRequest; ctx: IdentityContext; 
     try {
       assertSameOrigin(req)
       body = req.method === 'GET' ? Object.fromEntries(req.nextUrl.searchParams) : await readBody(req)
-      const ctx = opts.auth === false ? (null as unknown as IdentityContext) : await userFromRequest(req)
+      const ctx = opts.auth === false ? (null as unknown as IdentityContext) : await userFromRequest(req, { allowMustChangePassword: opts.allowMustChangePassword })
       const params = (await route?.params) ?? {}
       const result = await fn({ req, ctx, body, params })
       if (result instanceof Response) return result
@@ -136,6 +140,7 @@ export function errorResponse(req: Request, e: unknown, json: boolean, backTo: s
   const status = err?.status ?? 500
   if (json) return NextResponse.json({ status: 'error', code, message, details: err?.details }, { status })
   if (code === 'UNAUTHENTICATED') return redirect303(req, '/login', { err: message })
+  if (code === 'PASSWORD_CHANGE_REQUIRED') return redirect303(req, '/change-password', { err: message })
   return redirect303(req, backTo, { err: message })
 }
 

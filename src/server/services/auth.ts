@@ -100,7 +100,10 @@ export async function getSessionUser(token: string | undefined | null, source: S
     select u.* from sessions s join users u on u.user_id = s.user_id
     where s.session_hash = ${sha256(token)} and s.revoked_at is null and s.expires_at > now() and u.status = 'ACTIVE'`
   if (!row) return null
-  return { userId: row.user_id, email: row.email, name: row.name, roleId: row.role_id, divisionId: row.division_id, source }
+  return {
+    userId: row.user_id, email: row.email, name: row.name, roleId: row.role_id, divisionId: row.division_id, source,
+    mustChangePassword: row.must_change_password,
+  }
 }
 
 export async function logout(token: string) {
@@ -152,6 +155,19 @@ export async function completePasswordToken(token: string, newPassword: string) 
   const claimed = await db()`update auth_tokens set used_at = now() where token_hash = ${sha256(token)} and used_at is null returning 1`
   if (!claimed.length) throw new ServiceError('INVALID_TOKEN', 'Tautan tidak valid atau sudah kedaluwarsa.')
   await identityProvider().setPassword(row.email, newPassword)
-  await db()`update users set failed_login_count = 0, locked_until = null, updated_at = now() where user_id = ${row.user_id}`
+  await db()`update users set failed_login_count = 0, locked_until = null, must_change_password = false, updated_at = now() where user_id = ${row.user_id}`
   await recordAudit({ actorUserId: row.user_id, actorEmail: row.email, action: 'PASSWORD_SET', resourceType: 'USER', resourceId: row.user_id, result: 'SUCCESS', metadata: { via: row.purpose } })
+}
+
+/** User yang masih memakai password default membuat password sendiri (tanpa password lama: baru saja dipakai untuk masuk). */
+export async function changeDefaultPassword(ctx: IdentityContext, newPassword: string) {
+  if (!ctx.mustChangePassword) throw new ServiceError('VALIDATION', 'Password Anda sudah diganti.')
+  if (typeof newPassword !== 'string' || newPassword.length < 8) throw new ServiceError('VALIDATION', 'Password minimal 8 karakter.')
+  if (newPassword.endsWith(config.auth.defaultPasswordSuffix))
+    throw new ServiceError('VALIDATION', 'Jangan memakai pola password default. Buat password baru yang hanya Anda ketahui.')
+  await identityProvider().setPassword(ctx.email, newPassword)
+  await db().begin(async (tx) => {
+    await tx`update users set must_change_password = false, updated_at = now() where user_id = ${ctx.userId}`
+    await recordAudit({ actorUserId: ctx.userId, actorEmail: ctx.email, action: 'PASSWORD_CHANGED', resourceType: 'USER', resourceId: ctx.userId, result: 'SUCCESS', metadata: { via: 'DEFAULT_PASSWORD' } }, tx)
+  })
 }

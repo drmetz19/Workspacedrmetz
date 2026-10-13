@@ -9,9 +9,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   return (
     <AuthCard title="Masuk">
       <Flash msg={get('msg')} err={get('err')} />
-      <a className="btn btn-primary btn-block" href="/api/auth/google/start">Masuk dengan Google</a>
-      <p className="field-hint" style={{ textAlign: 'center' }}>Google Workspace klinik atau Gmail pribadi yang diundang. Owner &amp; GM wajib lewat Google.</p>
-      <div className="divider">atau dengan password</div>
       <form action="/api/auth/password" method="post">
         <div className="field">
           <label htmlFor="email">Email</label>
@@ -21,12 +18,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
           <label htmlFor="password">Password</label>
           <input id="password" name="password" type="password" autoComplete="current-password" required />
         </div>
-        <button className="btn btn-block" type="submit">Masuk</button>
+        <button className="btn btn-primary btn-block" type="submit">Masuk</button>
       </form>
+      <div className="divider">atau</div>
+      <a className="btn btn-block" href="/api/auth/google/start">Masuk dengan Google</a>
+      <p className="field-hint" style={{ textAlign: 'center' }}>Owner &amp; GM wajib lewat Google.</p>
       <p className="small" style={{ textAlign: 'center', marginTop: 14 }}>
         <a href="/forgot-password">Lupa password?</a>
       </p>
-      <p className="field-hint" style={{ textAlign: 'center' }}>Akses hanya untuk email yang sudah diundang.</p>
+      <p className="field-hint" style={{ textAlign: 'center' }}>Staf divisi: masuk dengan email Anda &amp; password dari admin. Akses hanya untuk email yang terdaftar.</p>
     </AuthCard>
   )
 }

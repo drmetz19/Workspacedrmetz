@@ -27,6 +27,8 @@ export const ACTION_LABEL: Record<string, string> = {
   ACCOUNT_LOCKED: 'Akun terkunci',
   LOGOUT: 'Keluar',
   PASSWORD_SET: 'Password diatur',
+  PASSWORD_DEFAULT_SET: 'Password default dibuat',
+  PASSWORD_CHANGED: 'Password diganti',
   PASSWORD_RESET_REQUESTED: 'Reset password diminta',
   USER_INVITED: 'User diundang',
   USER_UPDATED: 'User diubah',

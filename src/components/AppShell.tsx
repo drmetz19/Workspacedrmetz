@@ -76,7 +76,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
         {owner && (
           <nav className="nav-group" aria-label="Administrasi">
             <span className="nav-label">Administrasi</span>
-            <NavLink href="/admin/users" icon="badge">User &amp; Undangan</NavLink>
+            <NavLink href="/admin/users" icon="badge">User &amp; Akun</NavLink>
             <NavLink href="/admin/divisions" icon="account_tree">Divisi</NavLink>
             <NavLink href="/admin/categories" icon="sell">Kategori</NavLink>
             {!driveLinkMode && <NavLink href="/admin/sources" icon="cloud_sync">Sumber Drive</NavLink>}

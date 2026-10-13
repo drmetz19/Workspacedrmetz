@@ -11,6 +11,7 @@ export type ErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'INVALID_TOKEN'
   | 'UNAVAILABLE'
+  | 'PASSWORD_CHANGE_REQUIRED'
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
   UNAUTHENTICATED: 401,
@@ -25,6 +26,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   INVALID_CREDENTIALS: 401,
   INVALID_TOKEN: 400,
   UNAVAILABLE: 503,
+  PASSWORD_CHANGE_REQUIRED: 403,
 }
 
 /** Error terstruktur dari service layer. `message` aman ditampilkan ke user. */

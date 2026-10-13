@@ -46,5 +46,7 @@ export const config = {
     sessionHours: 12,
     inviteTokenHours: 72,
     resetTokenMinutes: 60,
+    /** Password default akun divisi = <NamaDivisi><suffix>, mis. Finance@DrMetz2026. */
+    defaultPasswordSuffix: '@DrMetz2026',
   },
 }
