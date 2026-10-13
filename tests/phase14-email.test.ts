@@ -39,6 +39,12 @@ describe('Email via Gmail SMTP (EMAIL_PROVIDER=smtp)', () => {
     expect((await outbox()).map((o) => o.to_email)).toEqual(['staf@klinik.id'])
   })
 
+  it('EMAIL_FROM kosong (seperti di .env.example) tetap memakai pengirim default', async () => {
+    process.env.EMAIL_FROM = ''
+    await sendEmail({ to: 'staf@klinik.id', subject: 'Undangan', body: 'Halo' })
+    expect(sent[0].from).toBe('"Dr. Metz Workspace" <projectcuan15@gmail.com>')
+  })
+
   it('Gagal kirim tidak menggagalkan alur (tetap ada di outbox)', async () => {
     setEmailTransportForTest({ sendMail: async () => { throw new Error('SMTP down') } })
     await expect(sendEmail({ to: 'staf@klinik.id', subject: 'Reset', body: 'x' })).resolves.toBeUndefined()

@@ -31,7 +31,8 @@ export default async function phase13(t: Smoke) {
   t.check('Staf tanpa hak → ditolak CSSE, tautan tidak diberikan', denied.status === 303 && !denied.location?.includes('drive.google.com') && decodeLoc(denied.location).length > 0)
 
   const legacy = await pic.get(`/api/files/${l4}`)
-  t.check('Link lama /api/files diarahkan ke jalur tautan', legacy.status === 303 && legacy.location!.endsWith(`/api/documents/${l4}/open-drive`))
+  // Sejak Phase 19 /api/files memeriksa izin + audit sendiri lalu langsung mengarahkan ke tautan Drive.
+  t.check('Link lama /api/files diarahkan ke tautan Drive (setelah cek izin)', legacy.status === 303 && !!legacy.location?.includes('drive.google.com'))
 
   const dash = await owner.get('/')
   t.check('Command Center menampilkan "Mode tautan"; menu Sumber Drive disembunyikan', dash.text.includes('Mode tautan') && !dash.text.includes('href="/admin/sources"'))

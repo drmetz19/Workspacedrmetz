@@ -41,6 +41,7 @@ Tidak perlu akun service.
 
 ## Checklist uji setelah kredensial masuk
 - [ ] Login Google Owner via Supabase · undang GM & staf · login password staf
+- [ ] User & Akun → "Aktifkan password default" → staf masuk dengan email + `NamaDivisi@DrMetz2026` → diminta buat password baru
 - [ ] Daftarkan dokumen dengan tautan Drive asli → buka sebagai user berwenang (Drive mengizinkan) & tidak berwenang (CSSE menolak)
 - [ ] Undang staf → email undangan masuk dari projectcuan15@gmail.com
 - [ ] Ask AI dengan provider Anthropic

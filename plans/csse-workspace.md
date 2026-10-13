@@ -307,4 +307,6 @@ Owner menambah Division User dengan pilihan "Password default divisi" (pola `<Ka
 - [x] Staf baru langsung masuk dengan email + password default, lalu diarahkan ke Buat password baru; password default ditolak sesudahnya
 - [x] Aktivasi massal hanya menyentuh Division User berstatus Diundang yang belum punya password default; Owner/GM tetap Google
 - [x] Reset ke password default mencabut sesi lama; hanya Owner; audit `PASSWORD_DEFAULT_SET` / `PASSWORD_CHANGED`
-- [x] typecheck, 187/187 test, build lolos; smoke fase 1–12 & 16 lolos (3 cek di fase 13–15 sudah gagal sebelum fase ini)
+- [x] typecheck, 187/187 test, build lolos; smoke Phase 20 (11 cek) lolos
+
+- [x] Regresi lulus 2026-10-13 — 188/188 test, smoke 17 skenario (fase 1–16 & 20) lolos

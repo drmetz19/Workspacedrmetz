@@ -39,7 +39,7 @@ export default async function phase15(t: Smoke) {
   const q = await owner.get('/documents?q=pajak')
   t.check('Saring dalam daftar', q.text.includes('Laporan Pajak Tahunan') && !q.text.includes('Izin Operasional Klinik Utama'))
   const izinRow = await owner.get('/documents?q=izin')
-  t.check('Kolom Drive: tertaut vs belum ada tautan', all.text.includes('Belum ada tautan') && /Tersinkron|Tertaut/.test(izinRow.text))
+  t.check('Kolom berkas: tautan Drive vs belum ada berkas', all.text.includes('Belum ada berkas') && /Tersinkron|Tautan Drive/.test(izinRow.text))
   t.check('Owner: tombol Buka Berkas untuk dokumen bertautan', izinRow.text.includes(`/api/documents/${izin}/open-drive`) && izinRow.text.includes('Buka Berkas'))
 
   const renew = await owner.get(`/documents/new?supersedes=${izin}`)

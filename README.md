@@ -29,7 +29,7 @@ Mode mock Drive: isi tabel `dev_drive_files` (container_id = ID folder diawali `
 ## Pengujian
 ```bash
 pnpm typecheck
-pnpm test                 # 149 test integrasi (DB csse_test dibuat ulang otomatis)
-pnpm build && pnpm smoke  # smoke end-to-end 12 fase terhadap build produksi (DB csse_smoke)
+pnpm test                 # 188 test integrasi (DB csse_test dibuat ulang otomatis)
+pnpm build && pnpm smoke  # smoke end-to-end (fase 1–16 & 20) terhadap build produksi (DB csse_smoke)
 pnpm smoke 4,9            # fase tertentu
 ```

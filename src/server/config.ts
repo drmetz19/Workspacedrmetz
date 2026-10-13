@@ -19,11 +19,12 @@ export const config = {
     return process.env.EMAIL_PROVIDER === 'smtp' ? 'smtp' : 'outbox'
   },
   smtp: {
-    get host() { return process.env.SMTP_HOST ?? 'smtp.gmail.com' },
-    get port() { return Number(process.env.SMTP_PORT ?? 465) },
+    // `||` (bukan `??`): variabel yang di-set kosong (mis. `EMAIL_FROM=` dari .env.example) tetap memakai default.
+    get host() { return process.env.SMTP_HOST || 'smtp.gmail.com' },
+    get port() { return Number(process.env.SMTP_PORT || 465) },
     get user() { return process.env.SMTP_USER ?? '' },
     get pass() { return process.env.SMTP_PASS ?? '' },
-    get from() { return process.env.EMAIL_FROM ?? `"Dr. Metz Workspace" <${process.env.SMTP_USER ?? ''}>` },
+    get from() { return process.env.EMAIL_FROM || `"Dr. Metz Workspace" <${process.env.SMTP_USER ?? ''}>` },
   },
   /**
    * link   = dokumen cukup berupa tautan Drive; izin file diatur setelan berbagi Drive (tanpa akun service, tanpa scan).
