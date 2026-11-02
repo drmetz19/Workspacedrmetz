@@ -15,7 +15,7 @@ export async function resetDb() {
       await tx.unsafe(`truncate ${names.map((n) => `"${n}"`).join(', ')} restart identity cascade`)
     })
   }
-  await sql`insert into divisions (division_name) values ('Legal/Perizinan')`
+  await sql`insert into divisions (division_name) values ('Legal/Perizinan'), ('Supply Chain')`
   await reseedExtra()
 }
 

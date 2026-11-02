@@ -9,6 +9,7 @@ import { approverFor, canCreateIn, canView, decide, maxLevelOnCreate, openMode, 
 import { visibleDocumentsWhere } from '../permissions/sql'
 import { loadGrants, loadGrantsFor } from '../permissions/grants'
 import { verifyUploadedFile } from './uploads'
+import { resolveNewCategory } from './org'
 
 // ── Tipe ────────────────────────────────────────────────────────────────
 export type DocumentStatus = 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'ARCHIVED' | 'REJECTED'
@@ -233,6 +234,8 @@ export const DocumentInput = z
     documentName: z.string().trim().min(3, 'minimal 3 karakter').max(200),
     documentNumber: optionalText,
     categoryId: optionalUuid,
+    /** Kategori baru yang diketik saat mendaftar; bila diisi, dipakai menggantikan categoryId (dibuat bila belum ada). */
+    newCategoryName: optionalText,
     divisionId: optionalUuid,
     securityLevel: z.coerce.number().int().min(1).max(5).default(2),
     picUserId: optionalUuid,
@@ -303,7 +306,8 @@ async function resolveFile(ctx: IdentityContext, data: ParsedInput, existing?: D
 const describeFile = (f: { provider: string; externalResourceId: string | null; fileName: string | null }) =>
   !f.externalResourceId ? null : f.provider === 'CSSE_STORAGE' ? `Unggahan: ${f.fileName ?? 'berkas'}` : 'Tautan Google Drive'
 
-async function assertRefs(q: Sql | Tx, data: ParsedInput) {
+async function assertRefs(q: Sql | Tx, ctx: IdentityContext, data: ParsedInput) {
+  await resolveNewCategory(q, ctx, data)
   if (data.categoryId && !(await q`select 1 from categories where category_id = ${data.categoryId}`).length)
     throw new ServiceError('VALIDATION', 'categoryId: kategori tidak ditemukan')
   if (data.divisionId && !(await q`select 1 from divisions where division_id = ${data.divisionId}`).length)
@@ -355,7 +359,7 @@ export async function createDocumentRecord(ctx: IdentityContext, input: unknown)
   }
   // Division User yang mendaftarkan tanpa PIC menjadi PIC-nya sendiri (agar tetap bisa membuka dokumennya).
   if (!data.picUserId && ctx.roleId === 'DIVISION_USER') data.picUserId = ctx.userId
-  await assertRefs(db(), data)
+  await assertRefs(db(), ctx, data)
   await assertPicAllowed(db(), ctx, data.picUserId, divisionId)
   const ext = await resolveFile(ctx, data)
   if (ext.provider === 'GOOGLE_DRIVE' && ext.externalResourceId) {
@@ -464,7 +468,7 @@ export async function updateDocumentMetadata(ctx: IdentityContext, documentId: u
     return deny(ctx, row.document_id, 'DOCUMENT_UPDATED')
   }
   const data = parseInput(DocumentInput, input)
-  await assertRefs(db(), data)
+  await assertRefs(db(), ctx, data)
   const ext = await resolveFile(ctx, data, row)
   if (ext.provider === 'GOOGLE_DRIVE' && ext.externalResourceId && ext.externalResourceId !== row.external_resource_id) {
     const dup = await duplicateMessage(db(), ext.externalResourceId)

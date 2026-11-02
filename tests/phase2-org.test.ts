@@ -91,3 +91,33 @@ describe('user: role & divisi', () => {
     await expect(updateUser(gm, staf.userId, { roleId: 'GM', divisionId: '', name: 'x' })).rejects.toMatchObject({ code: 'ACCESS_DENIED' })
   })
 })
+
+describe('divisi Supply Chain & kategori fleksibel', () => {
+  it('divisi Supply Chain tersedia', async () => {
+    const owner = await createUser({ role: 'OWNER' })
+    expect((await listDivisions(owner)).map((d) => d.divisionName)).toContain('Supply Chain')
+  })
+
+  it('Division User Supply Chain membuat kategori baru saat mendaftar dokumen; dipakai ulang tanpa duplikat', async () => {
+    const { createDocumentRecord } = await import('@/server/services/documents')
+    const sc = await divisionId('Supply Chain')
+    const staf = await createUser({ role: 'DIVISION_USER', division: 'Supply Chain' })
+    const base = { documentName: 'Dokumen Bea Cukai Q1', divisionId: sc, securityLevel: '2' }
+    const d1 = await createDocumentRecord(staf, { ...base, newCategoryName: '  Bea   Cukai ' })
+    const d2 = await createDocumentRecord(staf, { ...base, documentName: 'Dokumen Bea Cukai Q2', newCategoryName: 'bea cukai' })
+    expect(d1.categoryId).toBeTruthy()
+    expect(d2.categoryId).toBe(d1.categoryId)
+    const cats = (await listCategories(staf)).filter((c) => c.categoryName.toLowerCase() === 'bea cukai')
+    expect(cats).toHaveLength(1)
+    expect(cats[0].categoryName).toBe('Bea Cukai')
+    expect((await auditActions({ action: 'CATEGORY_CREATED' }))).toHaveLength(1)
+  })
+
+  it('kategori nonaktif tidak bisa dihidupkan lewat form dokumen', async () => {
+    const { createDocumentRecord } = await import('@/server/services/documents')
+    const owner = await createUser({ role: 'OWNER' })
+    const c = (await listCategories(owner)).find((x) => x.categoryName === 'MoU')!
+    await updateCategory(owner, c.categoryId, { categoryName: 'MoU', status: 'INACTIVE' })
+    await expect(createDocumentRecord(owner, { documentName: 'MoU Vendor X', newCategoryName: 'mou' })).rejects.toMatchObject({ code: 'VALIDATION' })
+  })
+})

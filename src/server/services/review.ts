@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { resolveNewCategory } from './org'
 import { auditAs } from '../audit'
 import { ServiceError } from '../errors'
 import type { IdentityContext } from '../context'
@@ -85,6 +86,7 @@ export async function confirmDraft(ctx: IdentityContext, documentId: unknown, in
   if (!restricted && data.securityLevel >= 3 && ctx.roleId !== 'OWNER')
     throw new ServiceError('VALIDATION', 'securityLevel: dokumen L3–5 harus disimpan di folder terbatas. Pindahkan file atau minta Owner.')
   if (data.securityLevel > maxLevelOnCreate(ctx)) throw new ServiceError('VALIDATION', `securityLevel: maksimal L${maxLevelOnCreate(ctx)} untuk role Anda.`)
+  await resolveNewCategory(db(), ctx, data)
   for (const [table, col, val, label] of [
     ['categories', 'category_id', data.categoryId, 'kategori'],
     ['divisions', 'division_id', data.divisionId, 'divisi'],

@@ -5,6 +5,7 @@ import { listCategories, listDivisions } from '@/server/services/org'
 import { listUserOptions } from '@/server/services/documents'
 import { maxLevelOnCreate } from '@/server/permissions/engine'
 import { guard } from '@/lib/page-guard'
+import { CategoryField } from '@/components/CategoryField'
 import { Flash } from '@/components/Flash'
 import { AccessDenied } from '@/components/AccessDenied'
 import { LEVEL_NAME } from '@/components/Badges'
@@ -58,14 +59,7 @@ export default async function ReviewDraftPage({ params, searchParams }: { params
             <input id="documentNumber" name="documentNumber" defaultValue={d.documentNumber ?? s.documentNumber ?? ''} />
             <Hint value={s.documentNumber} />
           </div>
-          <div className="field">
-            <label htmlFor="categoryId">Kategori</label>
-            <select id="categoryId" name="categoryId" defaultValue={catId}>
-              <option value="">— Pilih —</option>
-              {categories.map((c) => <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>)}
-            </select>
-            <Hint value={s.categoryName} />
-          </div>
+          <CategoryField categories={categories} defaultValue={catId} hint={<Hint value={s.categoryName} />} />
           <div className="field">
             <label htmlFor="divisionId">Divisi</label>
             <select id="divisionId" name="divisionId" defaultValue={divId}>
