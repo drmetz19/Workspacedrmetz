@@ -1,6 +1,7 @@
 import type { DocumentDto } from '@/server/services/documents'
 import type { CategoryDto, DivisionDto } from '@/server/services/org'
 import { LEVEL_NAME } from './Badges'
+import { CategoryField } from './CategoryField'
 import { FileSourceField } from './FileSourceField'
 
 interface Props {
@@ -29,13 +30,7 @@ export function DocumentForm({ action, doc, categories, divisions, users, replac
           <label htmlFor="documentNumber">Nomor dokumen</label>
           <input id="documentNumber" name="documentNumber" defaultValue={doc?.documentNumber ?? ''} />
         </div>
-        <div className="field">
-          <label htmlFor="categoryId">Kategori</label>
-          <select id="categoryId" name="categoryId" defaultValue={doc?.categoryId ?? ''}>
-            <option value="">— Pilih —</option>
-            {categories.map((c) => <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>)}
-          </select>
-        </div>
+        <CategoryField categories={categories} defaultValue={doc?.categoryId ?? ''} />
         <div className="field">
           <label htmlFor="divisionId">Divisi</label>
           <select id="divisionId" name="divisionId" defaultValue={doc?.divisionId ?? defaultDivisionId ?? ''}>

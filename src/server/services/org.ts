@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { db } from '../db'
+import { db, type Sql, type Tx } from '../db'
 import { auditAs } from '../audit'
 import { ServiceError } from '../errors'
 import type { IdentityContext } from '../context'
@@ -138,4 +138,31 @@ export async function updateCategory(ctx: IdentityContext, categoryId: unknown, 
     if (uniqueViolation(e)) throw new ServiceError('CONFLICT', 'Nama kategori sudah dipakai.')
     throw e
   }
+}
+
+/**
+ * Kategori fleksibel: pendaftar dokumen boleh mengetik kategori baru langsung di form.
+ * Nama dicocokkan tanpa membedakan huruf besar/kecil — kategori yang sudah ada dipakai ulang,
+ * yang belum ada dibuat (diaudit). Hasilnya ditulis ke `data.categoryId`.
+ */
+export async function resolveNewCategory(
+  q: Sql | Tx,
+  ctx: IdentityContext,
+  data: { categoryId: string | null; newCategoryName: string | null },
+): Promise<void> {
+  const name = data.newCategoryName?.replace(/\s+/g, ' ').trim()
+  if (!name) return
+  if (name.length < 2 || name.length > 80) throw new ServiceError('VALIDATION', 'newCategoryName: panjang 2–80 karakter')
+  const [found] = await q<CategoryRow[]>`select category_id, category_name, status from categories where lower(category_name) = lower(${name})`
+  if (found) {
+    if (found.status !== 'ACTIVE') throw new ServiceError('VALIDATION', `newCategoryName: kategori "${found.category_name}" sedang dinonaktifkan Owner.`)
+    data.categoryId = found.category_id
+    return
+  }
+  const [r] = await q<CategoryRow[]>`
+    insert into categories (category_name) values (${name})
+    on conflict (category_name) do update set category_name = excluded.category_name
+    returning category_id, category_name, status`
+  await auditAs(ctx, { action: 'CATEGORY_CREATED', resourceType: 'CATEGORY', resourceId: r.category_id, result: 'SUCCESS', metadata: { categoryName: r.category_name, via: 'DOCUMENT_FORM' } })
+  data.categoryId = r.category_id
 }
