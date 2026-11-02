@@ -17,6 +17,8 @@ export async function resetDb() {
   }
   await sql`insert into divisions (division_name) values ('Legal/Perizinan'), ('Supply Chain')`
   await reseedExtra()
+  if ((await sql`select 1 from pg_tables where tablename = 'branches'`).length)
+    await sql`insert into branches (branch_name, branch_code) values ('Bhayangkara', 'BHY'), ('Cibadak', 'CBD')`
 }
 
 /** Diperluas oleh fase berikutnya (mis. kategori). */

@@ -413,3 +413,31 @@ dl.meta dd { margin: 0; }
 .field-error { margin-top: 6px; font-size: 12px; color: var(--danger-ink); background: var(--danger-soft); border: 1px solid var(--danger-line); border-radius: var(--radius); padding: 6px 10px; }
 .file-ico { width: 38px; height: 38px; border-radius: var(--radius-lg); background: var(--sky-soft); color: var(--sky); display: grid; place-items: center; flex-shrink: 0; }
 .ellipsis { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Surat Pesanan: halaman publik & cetak ─────── */
+.public-wrap { min-height: 100vh; background: var(--paper); padding: 20px 16px 48px; }
+.public-col { width: 100%; max-width: 780px; margin: 0 auto; }
+.po-sheet { background: #fff; color: #111; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 28px 32px; }
+.po-sheet h2 { text-align: center; letter-spacing: .12em; margin: 0 0 4px; }
+.po-sheet table { width: 100%; border-collapse: collapse; }
+.po-sheet th, .po-sheet td { border: 1px solid #999; padding: 6px 8px; text-align: left; font-size: 13px; }
+.po-sign { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; text-align: center; font-size: 13px; }
+.po-sign div span { display: block; height: 64px; }
+.qr-box svg { width: 132px; height: 132px; display: block; }
+@media print {
+  .topbar, .sidebar, .footer, .no-print, .flash { display: none !important; }
+  .shell { display: block; background: #fff; }
+  .main { padding: 0; max-width: none; }
+  .po-sheet { border: 0; padding: 0; }
+  body { background: #fff; }
+}
+.chip.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.po-row { display: grid; grid-template-columns: minmax(140px, 3fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(110px, 2fr) auto; gap: 8px; align-items: start; }
+@media (max-width: 640px) {
+  .po-row { grid-template-columns: 1fr 1fr auto; }
+  .po-row > :nth-child(1) { grid-column: 1 / -1; }
+  .po-row > :nth-child(4) { grid-column: 1 / -1; }
+  .po-row > :nth-child(5) { grid-column: 3; grid-row: 2; }
+  .po-sheet { padding: 16px; }
+}
+.po-sheet tr:last-child td, .po-sheet tr:last-child th { border-bottom: 1px solid #999; }

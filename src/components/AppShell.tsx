@@ -8,6 +8,7 @@ import { Icon } from './Icon'
 export interface ShellCounts {
   pendingApprovals?: number
   draftsToReview?: number
+  pendingOrders?: number
 }
 
 export interface ShellDivision {
@@ -58,6 +59,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
           <NavLink href="/" exact icon="dashboard">Beranda / Overview</NavLink>
           <NavLink href="/documents" icon="folder">Direktori Dokumen</NavLink>
           <NavLink href="/meetings" icon="forum">Notulensi & Tindak Lanjut</NavLink>
+          <NavLink href="/orders" icon="shopping_cart" count={counts.pendingOrders}>Pesanan Barang</NavLink>
           <NavLink href="/search" icon="manage_search">Pencarian</NavLink>
           <NavLink href="/access" icon="verified_user" count={counts.pendingApprovals}>Persetujuan</NavLink>
           <NavLink href="/search/ask" icon="psychology">Tanya AI CSSE</NavLink>
