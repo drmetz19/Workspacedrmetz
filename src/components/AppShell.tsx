@@ -81,6 +81,7 @@ export function AppShell({ user, children, counts = {}, divisions = [], driveCon
             <NavLink href="/admin/users" icon="badge">User &amp; Akun</NavLink>
             <NavLink href="/admin/divisions" icon="account_tree">Divisi</NavLink>
             <NavLink href="/admin/categories" icon="sell">Kategori</NavLink>
+            <NavLink href="/admin/agents" icon="smart_toy">Token AI Agent</NavLink>
             {!driveLinkMode && <NavLink href="/admin/sources" icon="cloud_sync">Sumber Drive</NavLink>}
           </nav>
         )}
